@@ -1,0 +1,1 @@
+#couponBox .coupon-box,.coupon-bg .coupon-box{left:50%;top:50%!important;right:auto;bottom:auto;transform:translate(-50%,-50%)!important;max-height:50%;height:fit-content}.coupon-box .coupon-items{max-height:30vh;overflow-y:scroll}.coupon-box .coupon-items::-webkit-scrollbar{display:none}

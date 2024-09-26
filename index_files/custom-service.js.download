@@ -1,0 +1,175 @@
+reDefine([], function () {
+  function serviceFn(data) {
+    var customService = new Vue({
+      el: '#custom-service',
+      data() {
+        return {
+          show: false,
+          serviceLink: [],
+          serviceLinkHint: data.serviceLinkHint,
+          icon: data.icon,
+          secondStepShow: false,
+          secondServiceLink: [],
+          curServiceType: '',
+          jumpUrl: '',
+          serviceType: null, //当前点击的客服类型
+          oneType: false, //一个类型【多个渠道】
+        };
+      },
+      mounted() {
+        this.getCustomerServiceLink();
+      },
+      methods: {
+        close() {
+          if (this.oneType) {
+            this.closeMask();
+          } else if (this.secondStepShow) {
+            this.secondStepShow = false;
+          } else {
+            this.closeMask();
+          }
+        },
+        closeMask() {
+          this.show = false;
+          $('body').removeClass('disable-scroll');
+          this.secondStepShow = false;
+        },
+        go(val) {
+          this.curServiceType = val.type;
+          if (val.type && val.type.includes('zendesk')) {
+            try {
+              zE('messenger', 'show');
+              zE('messenger', 'open');
+              zE('messenger:on', 'close', function () {
+                zE('messenger', 'hide');
+              });
+            } catch (err) {
+              console.log(err);
+              zE('webWidget', 'show');
+              zE('webWidget', 'open');
+              zE('webWidget:on', 'close', function () {
+                zE('webWidget', 'hide');
+              });
+            }
+            window.statisticsPoster && window.statisticsPoster.send('service-zendesk');
+            this.close();
+          } else if (val.list.length > 1) {
+            this.secondServiceLink = val.list;
+            this.secondStepShow = true;
+            this.serviceType = val.type;
+          } else {
+            window.open(val.list[0].link);
+            window.statisticsPoster && window.statisticsPoster.send('service-' + val.type);
+            this.close();
+          }
+        },
+        open(val) {
+          window.open(val.link);
+          window.statisticsPoster && window.statisticsPoster.send('service-' + this.serviceType);
+          this.close();
+        },
+        getCustomerServiceLink() {
+          var params = {
+            marketId: data.marketId
+          }
+          if (typeof data.orgCode !== 'undefined') {
+            params.orgCode = data.orgCode;
+          }
+          customerApi
+            .getCustomerServiceLink(params)
+            .then(res => {
+              if (res && res.length) {
+                this.serviceLink = res.map(v => {
+                  let item = this.serviceLinkHint[v.type];
+                  if (item) {
+                    v.name = item.name;
+                    v.icon = item.icon;
+                  }
+                  if (v.type === 'whatsapp' && v.list.length) {
+                    v.list.forEach(item => {
+                      item.link = item.link + escape(window.location.href);
+                    })
+                  }
+                  return v;
+                });
+                if (this.serviceLink.length === 1 && this.serviceLink[0].list.length === 1) {
+                  this.jumpUrl = this.serviceLink[0].list[0].link;
+                }
+                this.oneType = this.serviceLink.length === 1 && this.serviceLink[0].list.length > 1;
+
+                if ($('.service-btn,#serviceKf,.serviceKf').length) {
+                  let serviceAttr = $('.service-btn,#serviceKf,.serviceKf')
+                    .attr('class')
+                    .split(/\s+/);
+                  serviceAttr.forEach(v => {
+                    $('body').off('click', '.' + v);
+                  });
+                  $('.service-btn,#serviceKf,.serviceKf').off('click').addClass('custom-service-btn');
+                }
+                $('.stick-service .rowdiv').off('click').addClass('custom-service-btn');
+                if (typeof data.noZe != 'undefined' && data.noZe) {
+                  let ze = res.find(v => v.type == 'zendesk');
+                  if (ze) {
+                    let len = ze.list.length - 1;
+                    $('head').append(ze.list[len].link);
+                    let timer = setInterval(function () {
+                      if (typeof zE != 'undefined') {
+                        clearInterval(timer);
+                        window.zESettings = {
+                          webWidget: {
+                            chat: {
+                              menuOptions: {
+                                emailTranscript: false
+                              },
+                              departments: {
+                                enabled: ['']
+                              }
+                            }
+                          }
+                        };
+                        try {
+                          zE('messenger', 'hide');
+                        } catch (err) {
+                          console.log(err);
+                          zE('webWidget', 'hide');
+                        }
+                      }
+                    }, 300);
+                  }
+                }
+              }
+            })
+            .catch(err => console.log(err));
+        },
+        copy(name, val) {
+          var clipBoard = new ClipboardJS('.' + name, {
+            text: () => {
+              return val; // 返回需要复制的内容
+            }
+          });
+          clipBoard.on('success', () => {
+            toast(data.emailCopySuccess);
+          });
+          clipBoard.on('error', e => {
+            console.log(e);
+          });
+        }
+      }
+    });
+
+    $('body').on('click', '.custom-service-btn', function (e) {
+      if (customService.jumpUrl) {
+        window.open(customService.jumpUrl);
+      } else if (customService.oneType) {
+        customService.serviceType = customService.serviceLink[0].type;
+        customService.secondServiceLink = customService.serviceLink[0].list;
+        customService.show = true;
+        customService.secondStepShow = true;
+      } else {
+        customService.show = true;
+        $('body').addClass('disable-scroll');
+      }
+    });
+  }
+  return { serviceFn };
+});

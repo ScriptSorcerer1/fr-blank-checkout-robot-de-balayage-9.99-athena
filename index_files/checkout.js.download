@@ -1,0 +1,170 @@
+(function($){
+    window.checkoutFun = {};
+    $.fn.coupon = function (proms, opts) {
+        opts = $.extend({
+            "url": '/service?name=promotion&action=checkCoupon',
+            "lang": {
+                "title": "點擊驗證優惠碼",
+                "placeholder": "輸入正確的優惠碼",
+                "confirm": "確認",
+                "reenter": '請重新輸入',
+                "success": "成功",
+                "error": {
+                    "10301": "請先輸入收貨信息",
+                    "10302": "無效的優惠代碼",
+                    "10303": "優惠代碼已過期",
+                    "10305": "還差{money}才能使用哦",
+                    "99": "无效的请求",
+                    "network_error": "connection error, please try agin"
+                }
+            }
+        }, opts);
+
+        var amount = opts.amount, discount = opts.discount || 0, serviceCharge = opts.serviceCharge || 0; 
+        
+        var rules = [];
+        var now = Util.dateFormat();
+        var couponL = $("#coupon-list li").length;
+        var showCouponInput = false; // 显示优惠码输入框
+        if(couponL <= 1){
+            for(var i=0; i<proms.length; i++){
+                //23：优惠码 满减  24：电话号码  28：优惠码 满折, 35: 客服优惠码
+                var ruleId = [23, 24, 28, 35];
+                if (ruleId.includes(Number(proms[i].rule))) {
+                    showCouponInput = true;
+                    if(proms[i].start > now || proms[i].end < now) continue;
+                    if(amount >= parseInt(proms[i].reach)){
+                        if(opts.symbol){
+                            if(opts.symbolBefore){
+                                opts.eCoupon.html(opts.symbol + " " + $.formatCurrency("0"));
+                            }else{
+                                opts.eCoupon.html($.formatCurrency("0") + " " + opts.symbol);
+                            }
+                            $(".discount-code").removeClass("hide");
+                        }else{
+                            $(".discount-code").removeClass("hide");
+                        }
+                        $(".discount-code").removeClass("hide");
+                         
+                        rules.push(proms[i].id);
+                    }
+                }
+            }
+        }
+       
+
+        if(rules.length===0){this.hide(); return;}
+        showCouponInput ? this.show() : this.hide();
+
+        opts.eCoupon = opts.eCoupon || $(".chechout-coupon");
+        opts.payment = opts.payment || $("input[name='payment']");
+
+        var p = $('<p>' + opts.lang.title + '</p>');
+        var wrap = $('<div class="coupon-wrap flex-btw"/>');
+        var coupon = $('<input type="text" class="form-control" placeholder="' + opts.lang.placeholder + '">');
+        var btn = $('<input class="coupon-btn btn detect-coupon-btn" type="button" value="'+ opts.lang.confirm + '">');
+        var error = $('<div class="coupon-error"><span class="error-reason"></span>，' + opts.lang.reenter + '</div>');
+
+        this.html("");
+        this.append(p); wrap.append(coupon); wrap.append(btn); this.append(wrap); this.append(error);
+
+        opts.phone = opts.phone || $('input[name="coupon"]').val();
+        checkoutFun.detectCoupon = {
+            getCoupon,
+            importCoupon: true
+        };
+        coupon.on('change',function() {
+            checkoutFun.detectCoupon.importCoupon = false;
+        })
+        btn.click(getCoupon);
+
+        // 检测优惠码
+        function getCoupon() {
+            return new Promise(function(resolve) {
+                var rtnType = opts.rtnType ? opts.rtnType : '';
+                var _this = $(this);
+                var error = $('.error-reason');
+                var code = coupon.val();
+                var currencyId = opts.remark.toCurrencyId ? opts.remark.toCurrencyId : 0 ;
+                checkoutFun.detectCoupon.importCoupon = true;
+                $.ajax({
+                    url: opts.url,
+                    type: 'post',
+                    dataType: 'json',
+                    data:{'code':code, 'rules': rules.join(','), 'amount': amount, 'phone': opts.phone, 'currencyId': currencyId,    'rtnType':rtnType},
+                    async: true,
+                    success:function(data){
+                        if(data.code == 0){
+                            var couponData = data.data.discount ? data.data.discount : data.data;
+                            $('input[name="coupon"]').val(couponData).attr('data-code', JSON.stringify({code: code, isCs: data.data    ['isCs'] || false }));;
+                            if(opts.payment&&opts.payment.filter(':checked').val()!='1') serviceCharge = 0;
+                            if(opts.eAmount) opts.eAmount.text(Util.formatCurrency(amount - couponData - discount + serviceCharge));
+                            if(opts.eCoupon){
+                                if(opts.symbolBefore){
+                                    opts.eCoupon.html("-" + opts.symbol + $.formatCurrency(couponData));
+                                }else{
+                                    opts.eCoupon.html("-" + $.formatCurrency(couponData) + opts.symbol);
+                                }
+                                opts.eCoupon.attr('data-value', couponData);
+                            }
+                            _this.val(opts.lang.success).attr('disabled', 'disabled');
+                            $('.coupon-error').hide();
+                            if(rtnType == 'info'){
+                                if(opts.onCouponSuccess) opts.onCouponSuccess(data.data);
+                            }else{
+                                if(opts.onCouponSuccess) opts.onCouponSuccess(couponData);
+                            }
+                            resolve(true);
+                        }else{
+                            $('.coupon-error').show();
+                            if(rtnType == 'info'){
+                                let errorText = '';
+                                errorText = data.code == 10305 ? opts.lang['error_'+data.code].replace('{money}', Math.abs(data.comment)) :     opts.lang['error_'+data.code]
+                                error.text(errorText);
+                            }else{
+                                error.text(opts.lang.error[data.code]);
+                            }
+                            resolve(false);
+                        }
+                    }
+                });
+            })
+        }
+        
+        return this;
+    }
+    // 快速配送, 展示快速配送的条件：1.配置快速配送服务费，2.是改派商品
+    function fastDelivery(data){
+        var {fastDeliveryPrice, curSymbolPos, curSymbol} = data;
+        var sinfo = store.get('sinfo');
+        var isChange = null;
+        if (sinfo) {
+            sinfo = JSON.parse(sinfo);
+            isChange = sinfo.isChange;
+        }
+        if(!fastDeliveryPrice || !isChange) {
+            return;
+        };
+        
+        $('.choose-delivery').show();
+        var price = curSymbolPos ? curSymbol + $.formatCurrency(fastDeliveryPrice) : $.formatCurrency(fastDeliveryPrice) + curSymbol
+        $('.choose-delivery .delivery-price span').html(price);
+        $('.choose-delivery .is-delivery').val(fastDeliveryPrice);
+    }
+    
+    // 检测结账页的不合法投放链接
+    function checkInvalidUrl(){
+        var reffer = document.referrer;
+
+        // 排除一体模板
+        if (typeof customerApi.urlNotify !== 'undefined' && location.href.indexOf('/index/detail.html') === -1 && reffer  && reffer.indexOf(location.hostname) === -1) {
+            customerApi.urlNotify({link: location.href})
+        }
+    }
+    checkInvalidUrl();
+    checkoutFun = {
+        ...checkoutFun,
+        fastDelivery,
+    }
+
+})(jQuery);

@@ -1,0 +1,117 @@
+(function($){
+/*******************comments3.0.html*********************************************/
+    //买家秀图片左右滑动
+     new Swiper('#imgs-container', {
+        slidesPerView: 3.7,
+        spaceBetween: 2,
+        freeMode: true,
+        pagination: {
+            // el: '.swiper-pagination',
+            clickable: true,
+        },
+    });
+    var img_h = $('#imgs-container li').width();
+    $("#imgs-container").css('height',img_h);
+
+
+    $('.view-more-btn').on('click',function(){
+        $('.all-comments').addClass('translate');
+        $('.back').on('click',function(){
+            $('.all-comments').removeClass('translate');
+        })
+    });
+
+/*******************photo.gallery.html*********************************************/
+    var index = '',len = '';
+    // $(document).on('click','.list-item .comment-pics ul li',function(){
+    //     var all_pics = $(this).parent('ul').html().trim();
+    //     len = $(this).parent('ul').children().length;
+    //     index = $(this).index();
+    //     var img = $(this).html().trim();
+    //     var all_pics = $(this).parent('ul').html().trim();
+    //     if($('.comment-zoom-container').length<1){
+    //         var html = '<div class="comment-zoom-container"><div class="allPics"><ul>'+ all_pics +'</ul></div><div class="zoom-container comment-zoom"><div class="zoom-mask">' +
+    //             '</div><div class="zoom-content"><div class="back close"><i class="iconfont icon-close3"></i></div>' +
+    //             '<ul><li>' + img + '</li></ul><div class="arrow arrow-left" data-type="left"><i class="iconfont icon-arrow-left1"></i></div>' +
+    //             '<div class="arrow arrow-right" data-type="right"><i class="iconfont icon-arrowright"></i></div></div></div></div>';
+    //         $('body').append(html);
+    //     }else{
+    //         return false;
+    //     }
+    // });
+
+    //可以滑动的评论图片弹窗
+    $(document).on('click','.list-item .comment-pics ul li',function(e){
+        e.stopPropagation();
+        var html = '';
+        var slide = '';
+        var aLi = $(this).parent('ul').find('li');
+        $.each(aLi,function(){
+             // img += $(this).html();
+            // console.log(img);
+            slide += '<div class="swiper-slide">'+ $(this).html() +'</div>';
+        });
+
+        if($('.comment-zoom-container').length<1){
+            html = '<div class="comment-zoom-container zoom">' +
+                '<div class="close"><i class="iconfont icon-close3"></i></div>'+
+                '<div class="zoom-container comment-zoom">' +
+                '<div class="zoom-mask1"></div><div class="zoom-content">' +
+                '<div class="swiper-container slide-img">' +
+                '<div class="swiper-wrapper">' + slide + '</div>' +
+                '<div class="swiper-pagination"></div>' +
+                '</div></div></div></div>';
+
+        }else{
+            return;
+        }
+        $('body').append(html);
+
+        new Swiper('.slide-img', {
+            pagination: {
+                el: '.slide-img .swiper-pagination',
+                type: 'fraction',
+            },
+            navigation: {
+            	nextEl: '.arrow-r',
+            	prevEl: '.arrow-l',
+            },
+        });
+
+    });
+
+    $(document).on('click','.comment-zoom-container .close',function(){
+        $(this).closest('.comment-zoom-container').remove();
+    });
+
+    //买家秀图片库查看大图和评论
+    // $(document).on('click','.photo-gallery-container ul li',function(){
+    //     len = $(this).parent('ul').children().length;
+    //     index = $(this).index();
+    //     var html = $(this).clone(true);
+    //     $('.gallery-zoom').show();
+    //     // $('.zoom-content ul').html(html);
+    // });
+
+    $(document).on('click','.gallery-zoom .zoom-content .back,.gallery-zoom .zoom-content,.gallery-zoom .zoom-mask',function(){
+        $(this).closest('.zoom-container').hide();
+    });
+    $(document).on('click','.comment-zoom .back,.comment-zoom .zoom-content,.comment-zoom .zoom-mask',function(){
+        $(this).closest('.comment-zoom-container').remove();
+    });
+
+    $(document).on('click','.close',function(){
+        $(this).parent().hide();
+    });
+
+    $(document).on('click','.customerShow-zoom',function(){
+        $(this).hide();
+    });
+    $(document).on('click','.comment-zoom-container',function(){
+        $(this).remove();
+    });
+
+    $(document).on('click','.swiper-button-next,.swiper-button-prev',function(e){
+        e.stopPropagation();
+    });
+})(jQuery);

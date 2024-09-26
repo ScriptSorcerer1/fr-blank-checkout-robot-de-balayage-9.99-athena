@@ -1,0 +1,20 @@
+reDefine([], function (data) {
+  function execute(data) {
+    const { serviceImg } = data;
+
+    // 服务政策替换为图片
+    if (serviceImg) {
+      var img = $('<div class="service-img"/>');
+      img.html(`<img src="${serviceImg}">`);
+      var serviceSection = $(
+        '.service-list, #serviceBtn, .detail-service, .product-security, #tlg_guarantee, #nry_guarantee'
+      );
+      serviceSection.each(function () {
+        if ($(this).css('display') !== 'none') {
+          $(this).before(img).remove();
+        }
+      });
+    }
+  }
+  return { execute };
+});

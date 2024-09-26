@@ -1,0 +1,1668 @@
+(function ($) {
+    $(document).on('click', '.read-more', function () {
+        var f = $(this).prev().hasClass('all');
+        if (!f) {
+            $(this).prev().addClass('all');
+            $(this).prev().attr('style', "-webkit-line-clamp: 20;");
+            $(this).prev().css('-webkit-line-clamp', 20);
+            $(this).addClass('open');
+            $(this).find('i').addClass('icon-up');
+            $(this).find('i').removeClass('icon-down');
+        } else {
+            $(this).prev().removeClass('all');
+            $(this).prev().removeAttr('style');
+            $(this).removeClass('open');
+            $(this).find('i').addClass('icon-down');
+            $(this).find('i').removeClass('icon-up');
+        }
+    });
+    function heredoc(fn) {
+        return fn.toString().split('\n').slice(1, -1).join('\n') + '\n'
+    }
+
+    function getQueryString(name) {
+        var reg = new RegExp("(^|&)" + name + "=([^&]*)(&|$)");
+        var r = window.location.search.substr(1).match(reg);
+        if (r != null) return unescape(r[2]); return '';
+    }
+
+    function showmore() {
+        var winWidth = document.body.clientWidth || document.documentElement.clientWidth;
+        $(".comment-content").each(function () {
+            if ($(this).find('.read-more').length > 0) {
+                $(this).find('.read-more').hide();
+                $p = $(this).find('p:eq(0)');
+                var txt = $p.text();
+                if (winWidth >= 640 && txt.length > 93) {
+                    $(this).find('.read-more').show();
+                }
+                else if (winWidth <= 500 && txt.length > 65) {
+                    $(this).find('.read-more').show();
+                }
+                else if ((winWidth >= 500 && winWidth <= 630) && txt.length > 80) {
+                    $(this).find('.read-more').show();
+                }
+            }
+        });
+    }
+
+    //下拉加載
+    function load_lasy(per_number, txt_bottom) {
+        var number = per_number || 4;
+        var txt = txt_bottom || '已經到最底端了';
+        var state = true;
+        $("#commentsList .list-item").hide();
+        var linum = $("#commentsList .list-item").length;
+        var height = 0;
+        var boxHeight = $("#commentsList").parent().innerHeight();
+        var num = 0;
+        $("#commentsList .list-item").each(function() {
+            if(boxHeight >= height) {
+                height += $(this).outerHeight();
+                num += 1;
+            }
+        })
+        number = number < num ? num : number;
+        $("#commentsList .list-item:lt(" + number + ")").show();
+        // showmore();
+        $("#commentsList").scroll(function () {
+            $("#commentLoad").show();
+            var scrot = $("#commentsList").scrollTop() + $("#commentsList").height();
+            if (scrot >= $("#commentsList").height() - 100) {
+                if (state == true) {
+                    state = false;
+                    $("#commentLoad img").css("display", "inline-block");
+                    setTimeout(function () {
+                        $("#commentLoad img").css("display", "none");
+                        var lilen = $("#commentsList .list-item:visible").length;
+                        var lilent = lilen + number;
+                        $("#commentsList .list-item:lt(" + lilent + ")").show();
+                        if (lilent >= linum) {
+                            $("#commentLoad").html("<p>" + txt + "</p>").css({
+                                "margin-top": "1px"
+                            });
+                        } else {
+                            state = true;
+                        }
+                    }, 1000);
+                }
+            }
+        });
+    }
+
+    //点赞
+    $(document).on('click', '.agree', function (e) {
+        var comId = $(this).attr('data-comid');
+        var f = $(this).find('i').hasClass('icon-agree_fill');
+        var num = parseInt($(this).find('b').text().trim());
+
+        if (!f) {
+            $(this).addClass('color');
+            $(this).find('i').removeClass('icon-agree').addClass('icon-agree_fill');
+            $.post(window.addzan_url + '?id=' + comId, {}, function (data) {
+
+            });
+            num++;
+        } else {
+            return false;
+        }
+        $(this).find('b').text(num);
+        $(this).prev().val(num);
+        e.stopPropagation();
+    });
+
+    var template = heredoc(function () {/*
+        <%if(position=='top'){%>
+            <div class="detail coupon-item" style="background: transparent;">
+            <div class="comment-horizontal list">
+        <%}%>
+        <%if(config.context_direction=='right'){%>
+            <div class="detail-content Dir">
+        <%}%>
+        <%if(config.context_direction!='right'){%>
+            <div class="detail-content">
+        <%}%>
+                <div class="comments-wrap wrap comments-wrap-new comment3_2">
+                    <div class="title">
+                        <h3 class="fl"><%= lang.comment_title %></h3>
+                        <div class="fr star-score xingxing">
+                            <%if(config.score_position=='left'){%>
+                            <span><b><%= avg_star %></b>/5</span>
+                            <%}%>
+                            <span>
+                                <%= avg_star_str %>
+                            </span>
+                            <%if(config.score_position=='right'){%>
+                            <span><b><%= avg_star %></b>/5</span>
+                            <%}%>
+                            <%if(config.display_star_arrow){%>
+                            <i class="iconfont icon-arrow-right2"></i>
+                            <%}%>
+                        </div>
+                    </div>
+                    <%if(position=='top'){%>
+                        <div class="comment-keywords hide"></div>
+                    <%}%>
+                    <%if(config.display_score_detail){%>
+                    <!--帶星級評分和進度條的評論標題 START--->
+                    <div class="title title-with-bar">
+                        <h4><%= lang.goods_review %></h4>
+                        <div class="star-progress-container">
+                            <div class="star-score">
+                                <div class="score"><%= avg_star %><span>/5</span></div>
+                                <span class="xingxing">
+                                    <%= avg_star_str %>
+                                </span>
+                            </div>
+                            <div class="fr progress">
+                                <ul>
+                                    <li>
+                                        <span class="xingxing">
+                                            <i class="iconfont icon-StarFilled"></i>
+                                            <i class="iconfont icon-StarFilled"></i>
+                                            <i class="iconfont icon-StarFilled"></i>
+                                            <i class="iconfont icon-StarFilled"></i>
+                                            <i class="iconfont icon-StarFilled"></i>
+                                        </span>
+                                        <span class="progress-bar"><b style="width:<%= level_detail[5] %>"></b></span>
+                                    </li>
+                                    <li>
+                                        <span class="xingxing">
+                                            <i class="iconfont icon-StarFilled"></i>
+                                            <i class="iconfont icon-StarFilled"></i>
+                                            <i class="iconfont icon-StarFilled"></i>
+                                            <i class="iconfont icon-StarFilled"></i>
+                                        </span>
+                                        <span class="progress-bar"><b style="width:<%= level_detail[4] %>"></b></span>
+                                    </li>
+                                    <li>
+                                        <span class="xingxing">
+                                            <i class="iconfont icon-StarFilled"></i>
+                                            <i class="iconfont icon-StarFilled"></i>
+                                            <i class="iconfont icon-StarFilled"></i>
+                                        </span>
+                                        <span class="progress-bar"><b style="width:<%= level_detail[3] %>"></b></span>
+                                    </li>
+                                    <li>
+                                        <span class="xingxing">
+                                            <i class="iconfont icon-StarFilled"></i>
+                                            <i class="iconfont icon-StarFilled"></i>
+                                        </span>
+                                        <span class="progress-bar"><b style="width:<%= level_detail[2] %>"></b></span>
+                                    </li>
+                                    <li>
+                                        <span class="xingxing">
+                                            <i class="iconfont icon-StarFilled"></i>
+                                        </span>
+                                        <span class="progress-bar"><b style="width:<%= level_detail[1] %>"></b></span>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <!--帶星級評分和進度條的評論標題 END--->
+                    <%}%>
+                    <!--買家秀-->
+                    <%if(config.slide_show_type=='none'){%>
+
+                    <%}%>
+                    <%if(config.slide_show_type=='picture'){%>
+                    <div class="customer-show">
+                        <!--<a href="javascript:;">  </a>-->
+                        <div class="show-title">
+                            <h3><%= lang.buyer_share_title %></h3>
+                            <span class="view-more"><span><%= lang.view_all_comment %></span><i class="iconfont icon-chevron-right1"></i></span>
+                        </div>
+                        <div class="swiper-container imgs-container">
+                            <ul class="swiper-wrapper">
+                                <% underscore.each(imgs, function(img_data,index){ %>
+                                    <%if(img_data.isVideo){%>
+                                    <li class="swiper-slide has-video"><video data-index="<%= index %>" data-id="<%= img_data.img_data.id %>" src="<%= img_data.src %>" alt=""></video><i class="iconfont iconbofanganniu" data-index="<%= index %>" data-id="<%= img_data.img_data.id %>"/></li>
+                                    <%}%>
+                                    <%if(!img_data.isVideo){%>
+                                    <li class="swiper-slide"><img data-index="<%= index %>" data-id="<%= img_data.img_data.id %>" src="<%= img_data.src %>" alt=""></li>
+                                    <%}%>
+                                <% }); %>
+                            </ul>
+                        </div>
+                    </div>
+                    <%}%>
+                    <%if(config.slide_show_type=='comment'){%>
+                    <!--水平滑動評論 共5條  START-->
+                    <div class="swiper-container  horizontal-list">
+                        <ul class="swiper-wrapper">
+                            <% underscore.each(img_review, function(review,index){ %>
+                            <% comment=review.img_data; %>
+                            <%if(index<config.slide_number && !review.isVideo){%>
+                            <li class="swiper-slide">
+                                <div class="abbreviate-comment fl">
+                                    <div class="h-customer">
+                                        <span class="avatar"><img src="<%= comment.head_portrait %>" alt="頭像"></span>
+                                        <span>
+                                        <%= comment.name %>
+                                         <%if(random_purcahse_num == 1 && comment.randomPurcahseNum > 1){%>
+                                            <i class="random-purchase-num"><%= lang.buy_up %><%= comment.randomPurcahseNum %><%= lang.time %></i>
+                                        <%}%>
+                                        </span>
+                                    </div>
+                                    <div class="comment-content">
+                                        <p><%= comment.content %></p>
+                                        <span class="spec"><%= comment.options %></span>
+                                    </div>
+                                </div>
+                                <div class="product-img fr">
+                                    <% underscore.each(comment.imgs, function(src,index){ %>
+                                        <%if(index<1){%>
+                                        <img src="<%= src %>" alt="">
+                                        <%}%>
+                                    <% }); %>
+                                </div>
+                            </li>
+                            <%}%>
+                            <% }); %>
+                        </ul>
+                    </div>
+                    <!--水平滑動評論 共5條  END-->
+                    <%}%>
+                    <!--評價-->
+                    <%if(config.display_comment){%>
+                    <% l_class='comments-list'; %>
+                    <%if(config.comment_star_position=='right'){l_class='vertical-list';}%>
+                    <div class="<%= l_class %>">
+                        <form action="/">
+                            <%if(position=='top'){%>
+
+                            <% underscore.each(comment_lists, function(comment,index){ %>
+                            <%if(index<top_number){%>
+                            <div class="list-item">
+                                <%if(config.comment_star_position=='left'){%>
+                                <div class="customer-info">
+                                    <span class="avatar"><img src="<%= comment.head_portrait %>" alt="頭像"></span>
+                                    <div class="customer-name">
+                                        <p>
+                                            <%= comment.name %>
+                                            <%if(random_purcahse_num == 1 && comment.randomPurcahseNum > 1){%>
+                                               <i class="random-purchase-num"><%= lang.buy_up %><%= comment.randomPurcahseNum %><%= lang.time %></i>
+                                            <%}%>
+                                        </p>
+                                        <span class="star-score">
+                                            <%= comment.level_star %>
+                                        </span>
+                                    </div>
+                                    <div class="date"><%= comment.fake_date %></div>
+                                </div>
+                                <%}%>
+                                <%if(config.comment_star_position=='right'){%>
+                                <div class="h-customer">
+                                    <span class="avatar"><img src="<%= comment.head_portrait %>" alt="頭像"></span>
+                                    <span>
+                                        <%= comment.name %>  
+                                        <%if(random_purcahse_num == 1 && comment.randomPurcahseNum > 1){%>
+                                            <i class="random-purchase-num"><%= lang.buy_up %><%= comment.randomPurcahseNum %><%= lang.time %></i>
+                                        <%}%>
+                                    </span>
+                                    <span class="xingxing">
+                                        <%= comment.level_star %>
+                                    </span>
+                                </div>
+                                <%}%>
+                                <div class="comment-content">
+                                    <p><%= comment.content %></p>
+                                    <%if(config.show_more_btn == 1){%>
+                                    <div class="read-more"><i class="iconfont icon-down"></i><a href="javascript:;"><%= lang.view_more %></a></div>
+                                    <%}%>
+                                </div>
+                                <%if(comment.imgs.length>0 || comment.video.length>0){%>
+                                <div class="photo-gallery comment-pics ">
+                                    <ul>
+                                        <% underscore.each(comment.video, function(src){ %>
+                                            <li class="has-video">
+                                                <video src="<%= src %>">
+                                                    <source src="<%= src %>" type="video/mp4" />
+                                                </video>
+                                                <i class="iconfont iconbofanganniu" />
+                                            </li>
+                                        <% }); %>
+                                        <% underscore.each(comment.imgs, function(src){ %>
+                                            <li><img src="<%= src %>" alt=""></li>
+                                        <% }); %>
+                                    </ul>
+                                </div>
+                                <%}%>
+                                <%if(config.comment_star_position=='left'){%>
+                                <div class="comment-footer">
+                                    <div class="fl spec">
+                                        <span><%= comment.options %></span>
+                                    </div>
+                                    <div class="fr action">
+                                        <input type="hidden">
+                                        <span data-comid="<%= comment.id %>" class="agree"><b><%= comment.zan_num %></b><i class="iconfont icon-agree"></i></span>
+                                        <span><b><%= comment.zan_mum %></b><i class="iconfont icon-xiaoxi"></i></span>
+                                    </div>
+                                </div>
+                                <%}%>
+                                <%if(config.comment_star_position=='right'){%>
+                                <div class="comment-footer">
+                                    <div class="fl spec"><%= comment.options %></div>
+                                    <div class="fr time"><%= comment.fake_date %></div>
+                                </div>
+                                <%}%>
+                                <%if(comment.reply != ''){%>
+                                <div class="reply">
+                                    <span><%= lang.seller_reply %>:</span><%= comment.reply %>
+                                </div>
+                                <%}%>
+                            </div>
+                            <%}%>
+                            <% }); %>
+
+                            <%}%>
+                            <%if(position!='top'){%>
+                            <% underscore.each(comment_lists, function(comment,index){ %>
+                            <div class="list-item">
+                                <%if(config.comment_star_position=='left'){%>
+                                <div class="customer-info">
+                                    <span class="avatar"><img src="<%= comment.head_portrait %>" alt="頭像"></span>
+                                    <div class="customer-name">
+                                        <p>
+                                            <%= comment.name %>
+                                            <%if(random_purcahse_num == 1 && comment.randomPurcahseNum > 1){%>
+                                                <i class="random-purchase-num"><%= lang.buy_up %><%= comment.randomPurcahseNum %><%= lang.time %></i>
+                                            <%}%>
+                                        </p>
+                                        <span class="star-score">
+                                            <%= comment.level_star %>
+                                        </span>
+                                    </div>
+                                    <div class="date"><%= comment.fake_date %></div>
+                                </div>
+                                <%}%>
+                                <%if(config.comment_star_position=='right'){%>
+                                <div class="h-customer">
+                                    <span class="avatar"><img src="<%= comment.head_portrait %>" alt="頭像"></span>
+                                    <span>
+                                        <%= comment.name %>
+                                        <%if(random_purcahse_num == 1 && comment.randomPurcahseNum > 1){%>
+                                            <i class="random-purchase-num"><%= lang.buy_up %><%= comment.randomPurcahseNum %><%= lang.time %></i>
+                                        <%}%>
+                                    </span>
+                                    <span class="xingxing">
+                                        <%= comment.level_star %>
+                                    </span>
+                                </div>
+                                <%}%>
+                                <div class="comment-content">
+                                    <p><%= comment.content %></p>
+                                    <%if(config.show_more_btn == 1){%>
+                                    <div class="read-more"><i class="iconfont icon-down"></i><a href="javascript:;"><%= lang.view_more %></a></div>
+                                    <%}%>
+                                </div>
+                                <%if(comment.imgs.length>0 || comment.video.length>0){%>
+                                <div class="photo-gallery comment-pics ">
+                                    <ul>
+                                        <% underscore.each(comment.video, function(src){ %>
+                                            <li class="has-video">
+                                                <video src="<%= src %>">
+                                                    <source src="<%= src %>" type="video/mp4" />
+                                                </video>
+                                                <i class="iconfont iconbofanganniu" />
+                                            </li>
+                                        <% }); %>
+                                        <% underscore.each(comment.imgs, function(src){ %>
+                                            <li><img src="<%= src %>" alt=""></li>
+                                        <% }); %>
+                                    </ul>
+                                </div>
+                                <%}%>
+                                <%if(config.comment_star_position=='left'){%>
+                                <div class="comment-footer">
+                                    <div class="fl spec">
+                                        <span><%= comment.options %></span>
+                                    </div>
+                                    <div class="fr action">
+                                        <input type="hidden">
+                                        <span data-comid="<%= comment.id %>" class="agree"><b><%= comment.zan_num %></b><i class="iconfont icon-agree"></i></span>
+                                        <span><b><%= comment.zan_mum %></b><i class="iconfont icon-xiaoxi"></i></span>
+                                    </div>
+                                </div>
+                                <%}%>
+                                <%if(config.comment_star_position=='right'){%>
+                                <div class="comment-footer">
+                                    <div class="fl spec"><%= comment.options %></div>
+                                    <div class="fr time"><%= comment.fake_date %></div>
+                                </div>
+                                <%}%>
+                                <%if(comment.reply != ''){%>
+                                <div class="reply">
+                                    <span><%= lang.seller_reply %>:</span><%= comment.reply %>
+                                </div>
+                                <%}%>
+                            </div>
+                            <% }); %>
+                            <%}%>
+                        </form>
+                    </div>
+                    <%}%>
+                    <%if(position=='bottom'){%>
+                        <%if(config.pagination_type==''){%>
+                        <div class="pagination">
+                            <span class="page-prev">&lt;</span>
+                            <ul>
+                            </ul>
+                            <span class="more">...</span>
+                            <span class="page-next">&gt;</span>
+                        </div>
+                        <%}%>
+                        <%if(config.pagination_type=='block'){%>
+                        <div class="pages-container">
+                            <i class="iconfont icon-arrow-left2 page-prev"></i>
+                            <ul class="pagination">
+                            </ul>
+                            <span>...</span>
+                            <i class="iconfont icon-arrow-right2 page-next"></i>
+                        </div>
+                        <%}%>
+                    <%}%>
+                    <%if(position=='top'){%>
+                        <%if(config.display_comment){%>
+                        <div class="comment-btn-box">
+                            <div class="comment-btn"><%= lang.view_more %><i class="iconfont icon-chevron-right1"></i></div>
+                        </div>
+                        <%}%>
+                    <%}%>
+                </div>
+
+
+                <!--买家秀图片库-->
+                <div class="photo-gallery-container ">
+                    <div class="back go-back fixed-top">
+                        <i class="iconfont icon-arrow-left"></i>
+                        <span><%= lang.buyer_share_title %></span>
+                    </div>
+                    <!--图片列表-->
+                    <div class="photo-gallery">
+                        <div class="imgs-list">
+                            <ul class="left">
+                                <% underscore.each(img_review, function(img_data,index){ %>
+                                    <%if(index % 2 == 0){%>
+                                    <li>
+                                    
+                                    <%if(img_data.isVideo){%>
+                                        <video data-index="<%= index %>" data-id="<%= img_data.img_data.id %>" src="<%= img_data.src %>" alt="" controls="controls"></video>
+                                    <%}%>
+                                    <%if(!img_data.isVideo){%>
+                                        <img data-index="<%= index %>" src="<%= img_data.src %>" alt="">
+                                    <%}%>
+                                    <div class="comment">
+                                        <div class="header">
+                                            <p>
+                                                <span class="star-score">
+                                                    <i class="iconfont icon-StarFilled"></i>
+                                                    <i class="iconfont icon-StarFilled"></i>
+                                                    <i class="iconfont icon-StarFilled"></i>
+                                                    <i class="iconfont icon-StarFilled"></i>
+                                                    <i class="iconfont icon-Star"></i>
+                                                </span>
+                                                <span class="short-title"><%= img_data.img_data.options %></span>
+                                            </p>
+                                        </div>
+                                        <div class="comment-content">
+                                            <%= img_data.img_data.content %>
+                                        </div>
+                                        <div class="customer">
+                                            <div class="cus-avatar">
+                                                <img src="<%= img_data.img_data.head_portrait %>" alt="">
+                                                <span><%= img_data.img_data.name %></span>
+                                            </div>
+                                            <div class="agree"  data-comid="<%= img_data.img_data.id %>">
+                                                <i class="iconfont icon-agree"></i>
+                                                <b><%= img_data.img_data.zan_num %></b>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </li>
+                                    <%}%>
+                                <% }); %>
+                            </ul>
+                            <ul class="right">
+                                <% underscore.each(img_review, function(img_data,index){ %>
+                                    <%if(index % 2 != 0){%>
+                                    <li>
+                                        <%if(img_data.isVideo){%>
+                                            <video data-index="<%= index %>" data-id="<%= img_data.img_data.id %>" src="<%= img_data.src %>" alt="" controls="controls"></video>
+                                        <%}%>
+                                        <%if(!img_data.isVideo){%>
+                                            <img data-index="<%= index %>" src="<%= img_data.src %>" alt="">
+                                        <%}%>
+                                        <div class="comment">
+                                            <div class="header">
+                                                <p>
+                                                    <span class="star-score">
+                                                        <i class="iconfont icon-StarFilled"></i>
+                                                        <i class="iconfont icon-StarFilled"></i>
+                                                        <i class="iconfont icon-StarFilled"></i>
+                                                        <i class="iconfont icon-StarFilled"></i>
+                                                        <i class="iconfont icon-Star"></i>
+                                                    </span>
+                                                    <span class="short-title"><%= img_data.img_data.options %></span>
+                                                </p>
+                                            </div>
+                                            <div class="comment-content">
+                                                <%= img_data.img_data.content %>
+                                            </div>
+                                            <div class="customer">
+                                                <div class="cus-avatar">
+                                                    <img src="<%= img_data.img_data.head_portrait %>" alt="">
+                                                    <span><%= img_data.img_data.name %></span>
+                                                </div>
+                                                <div class="agree"  data-comid="<%= img_data.img_data.id %>">
+                                                    <i class="iconfont icon-agree"></i>
+                                                    <b><%= img_data.img_data.zan_num %></b>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </li>
+                                    <%}%>
+                                <% }); %>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!--点开买家秀 展示产品大图和评论-->
+                <div class="zoom-container gallery-zoom">
+                    <div class="zoom-mask"></div>
+                    <div class="zoom-content">
+                        <div class="back"><i class="iconfont icon-close3"></i></div>
+                        <ul>
+                            <li>
+                                <img src="" alt="">
+                                <div class="comment">
+                                    <div class="header">
+                                            <span class="star-score">
+                                                <i class="iconfont icon-StarFilled"></i>
+                                                <i class="iconfont icon-StarFilled"></i>
+                                                <i class="iconfont icon-StarFilled"></i>
+                                                <i class="iconfont icon-StarFilled"></i>
+                                                <i class="iconfont icon-Star"></i>
+                                            </span>
+                                        <span class="short-title">黑色 128GB</span>
+                                    </div>
+                                    <div class="comment-content">
+                                        <p>
+                                            衣服真厚，沒想到，花色我挺喜歡的，不深，不亂，值得購買。 衣服真厚，沒想到，花色我挺喜歡的，不深，不亂，值得購買。 衣服真厚，沒想到，花色我挺喜歡的，不深，不亂，值得購買。
+                                        </p>
+                                        <div class="agree">
+                                            <i class="iconfont icon-agree"></i>
+                                            <b>12</b>
+                                        </div>
+                                    </div>
+                                </div>
+                            </li>
+                        </ul>
+                        <div class="arrow arrow-left" data-type="left">
+                            <i class="iconfont icon-arrow-left1"></i>
+                        </div>
+                        <div class="arrow arrow-right" data-type="right">
+                            <i class="iconfont icon-arrowright"></i>
+                        </div>
+                    </div>
+                </div>
+
+
+                <!--仿淘宝买家秀效果 start-->
+                <div class="customerShow-zoom gallery-zoom zoom">
+                    <div class="close"><i class="iconfont icon-close3"></i></div>
+                    <div class="swiper-container slide-comment"  style="width: 100%;height: 100%;">
+                        <div class="swiper-wrapper">
+                        <% underscore.each(imgs, function(img_data,index){ %>
+                        <div class="swiper-slide">
+                                <div class="swiper-container slide-img">
+                                    <ul class="swiper-wrapper">
+                                        <%if(id_lists[img_data.id]['video'] && id_lists[img_data.id]['video'].length){%>
+                                            <% underscore.each(id_lists[img_data.id]['video'], function(src){ %>
+                                            <li class="swiper-slide"><video src="<%= src %>" alt="" controls="controls"></video></li>
+                                        <% }); %>
+                                        <%}%>
+                                        <% underscore.each(id_lists[img_data.id]['imgs'], function(img_src){ %>
+                                            <li class="swiper-slide"><img src="<%= img_src %>" alt=""></li>
+                                        <% }); %>
+                                    </ul>
+                                    <div class="swiper-pagination"></div>
+                                   <div class="swiper-button-next arrow-r"><i class="iconfont icon-arrow-right2"></i></div>
+									<div class="swiper-button-prev arrow-l"><i class="iconfont icon-arrow-left2"></i></div>
+                                </div>
+                                <div class="comment">
+                                    <div class="header">
+                                        <span class="star-score">
+                                            <%= id_lists[img_data.id]['level_star'] %>
+                                        </span>
+                                        <span class="short-title"><%= id_lists[img_data.id]['options'] %></span>
+                                    </div>
+                                    <div class="comment-content">
+                                        <p>
+                                            <%= id_lists[img_data.id]['content'] %>
+                                        </p>
+                                        <div class="agree" data-comid="<%= id_lists[img_data.id]['id'] %>">
+                                            <i class="iconfont icon-agree"></i>
+                                            <b><%= id_lists[img_data.id]['zan_num'] %></b>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        <% }); %>
+                        </div>
+                        <!-- Add Pagination -->
+                        <div class="swiper-button-next  swiper-next-button1">
+                            <span class="next-screen"><%= lang.next_comment %></span>
+                            <div class=" iconfont icon-arrow-down1"></div>
+                        </div>
+                        <div class="swiper-button-prev iconfont icon-arrow-up"></div>
+                    </div>
+                </div>
+                <!--仿淘宝买家秀效果 end-->
+            </div>
+            <%if(position=='top'){%>
+            </div>
+            </div>
+            <%}%>
+            <%if(position=='top'){%>
+            <!--查看更多評論-->
+            <div class="comment-layer">
+            <div class="cover-bg"></div>
+            <div class="cover-content">
+                <div class="cover-title">
+                	<span class="cover-comment-add"><%= lang.add_review %><i class="iconfont icon-edit"></i></span>
+                    <h3 class="fl"><%= lang.comment_title %>(<%= total %>)</h3>
+                    <i class="iconfont icon-close3" id="coverClose"></i>
+                </div>
+                <div class="comments-list comments-list-new" id="commentsList">
+                    <% underscore.each(comment_lists, function(comment,index){ %>
+                            <div class="list-item">
+                                <div class="customer-info">
+                                    <span class="avatar"><img src="<%= comment.head_portrait %>" alt="頭像"></span>
+                                    <div class="customer-name">
+                                        <p>
+                                            <%= comment.name %>
+                                            <%if(random_purcahse_num == 1 && comment.randomPurcahseNum > 1){%>
+                                               <i class="random-purchase-num"><%= lang.buy_up %><%= comment.randomPurcahseNum %><%= lang.time %></i>
+                                            <%}%>
+                                        </p>
+                                        <span class="star-score">
+                                            <%= comment.level_star %>
+                                        </span>
+                                    </div>
+                                    <div class="date"><%= comment.fake_date %></div>
+                                </div>
+                                <div class="comment-content">
+                                    <p><%= comment.content %></p>
+                                    <%if(config.show_more_btn == 1){%>
+                                    <div class="read-more"><i class="iconfont icon-down"></i><a href="javascript:;"><%= lang.view_more %></a></div>
+                                    <%}%>
+                                </div>
+                                <div class="photo-gallery comment-pics ">
+                                    <ul>
+                                        <% underscore.each(comment.video, function(src){ %>
+                                            <li class="has-video">
+                                                <i class="iconfont iconbofanganniu" />
+                                                <video src="<%= src %>">
+                                                    <source src="<%= src %>" type="video/mp4" />
+                                                </video>
+                                            </li>
+                                        <% }); %>
+                                        <% underscore.each(comment.imgs, function(src){ %>
+                                            <li><img src="<%= src %>" alt=""></li>
+                                        <% }); %>
+                                    </ul>
+                                </div>
+                                <div class="comment-footer">
+                                    <div class="fl spec">
+                                        <span><%= comment.options %></span>
+                                    </div>
+                                    <div class="fr action">
+                                        <input type="hidden">
+                                        <span data-comid="<%= comment.id %>" class="agree"><b><%= comment.zan_num %></b><i class="iconfont icon-agree"></i></span>
+                                        <span><b><%= comment.zan_mum %></b><i class="iconfont icon-xiaoxi"></i></span>
+                                    </div>
+                                </div>
+                                <%if(comment.reply != ''){%>
+                                <div class="reply">
+                                    <span><%= lang.seller_reply %>:</span><%= comment.reply %>
+                                </div>
+                                <%}%>
+                            </div>
+                            <% }); %>
+                    <div id="commentLoad" style="display:none;">
+                        <img src="https://nrshop.s3.ap-southeast-1.amazonaws.com/skin/default/images/loading.gif"/>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <%}%>
+    */});
+
+    Date.prototype.format = function (fmt) {
+        var o = {
+            "M+": this.getMonth() + 1,                 //月份
+            "d+": this.getDate(),                    //日
+            "h+": this.getHours(),                   //小时
+            "m+": this.getMinutes(),                 //分
+            "s+": this.getSeconds(),                 //秒
+            "q+": Math.floor((this.getMonth() + 3) / 3), //季度
+            "S": this.getMilliseconds()             //毫秒
+        };
+        if (/(y+)/.test(fmt)) {
+            fmt = fmt.replace(RegExp.$1, (this.getFullYear() + "").substr(4 - RegExp.$1.length));
+        }
+        for (var k in o) {
+            if (new RegExp("(" + k + ")").test(fmt)) {
+                fmt = fmt.replace(RegExp.$1, (RegExp.$1.length == 1) ? (o[k]) : (("00" + o[k]).substr(("" + o[k]).length)));
+            }
+        }
+        return fmt;
+    }
+
+    function showlevel(star) {
+        var xingxing = parseInt(star);
+        var star_str = '';
+        var i = 0;
+        for (i = 0; i < xingxing; i++) {
+            star_str += '<i class="iconfont icon-StarFilled"></i>';
+        }
+        if (star != xingxing) {
+            star_str += '<i class="iconfont icon-star-half2"></i>';
+            i++;
+        }
+        var left = 5 - i;
+        for (var j = 0; j < left; j++) {
+            star_str += '<i class="iconfont icon-Star"></i>';
+        }
+        return star_str;
+    }
+
+    var Review = function (lists) {
+        this.lists = lists;
+        this.setData = function (lists) {
+            this.lists = lists;
+        }
+        this.init = function () {
+            var now = new Date().getTime();
+            var lists = this.lists;
+            var new_lists = [];
+            for (var i in lists) {
+                var fake_date = lists[i]['fake_date'];
+                if (fake_date != '0000-00-00 00:00:00' && fake_date != '' && fake_date != null) {
+                    time = fake_date.replace(/-/g, '/'); // 把所有-转化成/
+                    var _date = new Date(time);
+                    var fake_time = _date.getTime();
+                    if (fake_time <= now) {
+                        new_lists.push(lists[i]);
+                    }
+                }
+            }
+            this.lists = new_lists;
+            this.output();
+            this.groupByDate();
+            this.orderByTop();
+            return this.lists;
+        }
+
+        this.output = function () {
+            var lists = this.lists;
+            for (var i in lists) {
+                var options = lists[i]['options'] || '';
+                if (options == false) {
+                    lists[i]['options'] = '';
+                }
+                var fake_date = lists[i]['fake_date'] || '';
+                if (fake_date != '') {
+                    lists[i]['fake_datetime'] = fake_date;
+                    var time = fake_date.replace(/-/g, '/'); // 把所有-转化成/
+                    var d = new Date(time);
+                    fake_date = d.format("yyyy-MM-dd");
+                    lists[i]['fake_date'] = fake_date;
+                }
+            }
+            this.lists = lists;
+        }
+
+        this.orderByTop = function () {
+            var lists = this.lists;
+            var top = [];
+            var other = [];
+            for (var i in lists) {
+                if (lists[i]['is_top'] == 1) {
+                    top.push(lists[i]);
+                }
+                else {
+                    other.push(lists[i]);
+                }
+            }
+            this.lists = top.concat(other);
+        }
+
+        this.groupByDate = function () {
+            var arr = this.lists.sort(function (a, b) {
+                var arr1 = a['fake_datetime'].replace(/ |:/g, '-').split('-');
+                var time1 = a['fake_datetime'].replace(/-/g, '/'); // 把所有-转化成/
+                var d1 = new Date(time1);
+
+                var arr2 = b['fake_datetime'].replace(/ |:/g, '-').split('-');
+                var time2 = b['fake_datetime'].replace(/-/g, '/'); // 把所有-转化成/
+                var d2 = new Date(time2);
+
+                var time1 = d1.getTime();
+                var time2 = d2.getTime();
+                return time1 - time2 > 0 ? -1 : 1;
+            });
+            this.lists = arr;
+            return arr;
+        }
+    }
+
+    var Comment = function (options, obj) {
+        var _this = this;
+        var _lang = options.lang || {};
+        var this_id = obj.attr('id') || '';
+        var this_class = obj.attr('class') || '';
+        var el = this_id == '' ? '.' + this_class : '#' + this_id;
+        this.el = el;
+        var config = {
+            id: options.id || 0,
+            limit: options.limit || 5,
+            top_number: options.top_number || 2,
+            comment_list: options.comment_lists.data || options.comment_lists || [],
+            version: options.version || 3,
+            position: options.position || 'top',
+            totalCallback: options.totalCallback || '',
+            length_elements: this.el + ' .comments-wrap .comments-list .list-item',
+            photo_url: options.photo_url || '',
+            lang: {
+                comment_title: _lang.comment_title || '商品評價',
+                buyer_share_title: _lang.buyer_share_title || '買家分享',
+                seller_reply: _lang.seller_reply || '賣家回復',
+                view_all_comment: _lang.view_all_comment || '查看全部',
+                has_bottom: _lang.has_bottom || '已經到最底端了',
+                view_more: _lang.view_more || '查看更多',
+                next_comment: _lang.next_comment || '下一條評論',
+                already_last_comment: _lang.already_last_comment || '已經是最后一條了',
+                first_picture: _lang.first_picture || '已是第一張圖',
+                last_picture: _lang.last_picture || '已是最后一張圖',
+                add_review: _lang.add_review || '我要評價',
+                goods_review: _lang.goods_review || '寶貝評價',
+                buy_up: _lang.buy_up || '买过',
+                time: _lang.time || '次',
+            },
+            random_purcahse_num:  options.random_purcahse_num || 0,
+            show_more_btn: options.show_more_btn || 0,
+        }
+        this.page_active = 'on';
+        this.page_class = 'pagination';
+        if (options.pagination_type == 'block') {
+            this.page_active = 'active';
+            this.page_class = 'pages-container';
+        }
+
+        this.lang = config.lang;
+        window.lang_first_picture = this.lang.first_picture;
+        window.lang_last_picture = this.lang.last_picture;
+        window.already_last_comment = this.lang.already_last_comment;
+        window.lang_next_comment = this.lang.next_comment;
+        this.id = config.id;
+
+        var addzan_url = options.addzan_url || '';
+        var cancelzan_url = options.cancelzan_url || '';
+        if (addzan_url == '') {
+            addzan_url = '/review/addzan';
+        }
+        if (cancelzan_url == '') {
+            cancelzan_url = '/review/cancelzan';
+        }
+        window.addzan_url = addzan_url;
+        window.cancelzan_url = cancelzan_url;
+
+        this.data = config.comment_list;
+        this.lists = config.comment_list.lists || [];//评论列表
+
+        var review = new Review(this.lists);
+        this.lists = review.init();
+
+        this.avg_star = config.comment_list.avg_star;//平均星级
+        this.limit = config.limit;
+        this.current = 0;
+        this.top_number = config.top_number;
+        this.position = config.position;
+        this.length_elements = config.length_elements;
+        this.random_purcahse_num = config.random_purcahse_num;
+        this.show_more_btn = config.show_more_btn;
+        if (options.comment_star_position == 'right') {
+            this.length_elements = this.el + ' .comments-wrap .vertical-list .list-item';
+        }
+        this.photo_url = config.photo_url;
+
+        this.setLists = function (lists) {
+            this.lists = lists;
+        }
+
+        this.setAvgStar = function (star) {
+            this.avg_star = star;
+        }
+
+        this.init = function () {
+            var fenye = this.initPagination();
+            var list = this.lists;
+            this.finishPagination();
+            this.pageChange(0);
+            this.doPageClick();
+            var total = list.length;
+            if (config.totalCallback != '') {
+                options.totalCallback(total, this.avg_star);
+            }
+            if (options.site_type == 1) {
+                var protocol = location.protocol;
+                var host = protocol + "//" + location.host;
+
+                if (total > 5) {
+                    if ($("#commentNum").length > 0) {
+                        $("#commentNum").html("(" + total + ")");
+                    }
+                    if ($("#commnetNum").length > 0) {
+                        if (total > 99) {
+                            total = "99+";
+                        }
+                        $("#commnetNum").html(total);
+                    }
+                }
+                if ($("#commentNumber").length > 0 && $("#star").length > 0) {
+                    $("#commentNumber").html("(" + this.avg_star + ")");
+                    if(!$('#commentNumber').siblings('.comment-imgj').length) {
+                        $("#commentNumber").after('<img src="' + host + '/front/res/img/starj.gif" class="comment-imgj">');
+                      }
+                    //星級評價
+                    var star_str = showlevel(this.avg_star);
+                    $("#star").html(star_str);
+                }
+            }
+        };
+
+        this.getBrowserLanguage = function () {
+            return (navigator.language || navigator.browserLanguage).toLowerCase();
+        }
+
+        this.initPagination = function () {
+            var fenye = '';
+            fenye += '<div class="pagination">';
+            fenye += '<span class="page-prev">&lt;</span>';
+            fenye += '<ul>';
+            fenye += '</ul>';
+            fenye += '<span class="more">...</span>';
+            fenye += '<span class="page-next">&gt;</span>';
+            fenye += '</div>';
+            return fenye;
+        };
+
+        this.finishPagination = function () {
+            var current = this.current, limit = this.limit;
+            var dataLength = $(this.length_elements).length;
+            var pages = Math.ceil(dataLength / limit);
+            this.pages = pages;
+            for (var i = 0; i < pages; i++) {
+                var li = document.createElement('li');
+                $(li).html(i + 1);
+                $(this.el + ' .' + this.page_class + ' ul').append(li);
+            }
+            var $li = $(this.el + ' .' + this.page_class + ' ul').find('li');
+            $.each($li, function () {
+                var num = parseInt($(this).html());
+                if (num > 4) {
+                    $(this).hide();
+                }
+            })
+        };
+
+        this.pageChange = function (num) {
+            $(this.length_elements).hide();
+            var limit = this.limit;
+            var winWidth = document.body.clientWidth || document.documentElement.clientWidth;
+
+            for (var i = 0 + limit * num; i < limit + limit * num; i++) {
+                $(this.length_elements).eq(i).show();
+                $p = $(this.length_elements).eq(i).find('.comment-content').find('p:eq(0)');
+                var txt = $p.text();
+                $p.addClass('all');
+                $p.attr('style', "-webkit-line-clamp: 20;");
+                $p.css('-webkit-line-clamp', 20);
+
+                $(this.length_elements).eq(i).find('.comment-content').find('.read-more:eq(0)').hide();
+
+                // if(winWidth>=640 && txt.length>93)
+                // {
+                //     $(this.length_elements).eq(i).find('.comment-content').find('.read-more:eq(0)').show();
+                // }
+                // else if(winWidth<=500 && txt.length>65)
+                // {
+                //     $(this.length_elements).eq(i).find('.comment-content').find('.read-more:eq(0)').show();
+                // }
+                // else if((winWidth>=500 && winWidth<=630) && txt.length>80)
+                // {
+                //     $(this.length_elements).eq(i).find('.comment-content').find('.read-more:eq(0)').show();
+                // }
+            }
+            $(this.el + ' .' + this.page_class + ' ul li').eq(this.current).addClass(this.page_active).siblings().removeClass(this.page_active);
+        };
+        this.jumpto = function () {
+            $('html,body').animate({ scrollTop: $(this.el + ' .comments-wrap').offset().top }, 300);
+        }
+        this.rendorPage = function (current_page, active_page) {
+            $(this.el + ' .' + this.page_class + ' ul li').hide();
+            var length = $(this.el + ' .pagination ul li').length;
+            if (current_page == length) {
+                $(this.el + ' .' + this.page_class + ' ul li').each(function () {
+                    var num = parseInt($(this).html());
+                    if (num > length - 4) {
+                        $(this).show();
+                    }
+                });
+            }
+            else if (current_page >= 4) {
+                $(this.el + ' .' + this.page_class + ' ul li').each(function () {
+                    var num = parseInt($(this).html());
+                    if (Math.abs(current_page - num) <= 2) {
+                        $(this).show();
+                    }
+                });
+            }
+            else {
+                $(this.el + ' .' + this.page_class + ' ul li').each(function () {
+                    var num = parseInt($(this).html());
+                    if (num <= 4) {
+                        $(this).show();
+                    }
+                });
+            }
+        }
+        this.doPageClick = function () {
+            $(this.el + ' .' + this.page_class).on('click', 'ul li', function () {
+                $(this).addClass(this.page_active).siblings().removeClass(this.page_active);
+                current = $(this).index();
+                _this.current = current;
+                _this.pageChange(current);
+                var active_page = _this.current;
+                var current_page = current + 1;
+                _this.rendorPage(current_page, active_page);
+                _this.jumpto();
+            })
+            $(this.el + ' .page-prev').click(function () {
+                var current = _this.current;
+                $('.pagination + span').show();
+                if (current > 0) {
+                    current -= 1
+                    _this.current = current;
+                    _this.pageChange(current);
+                    _this.rendorPage(current - 1, current);
+                }
+                _this.jumpto();
+            })
+            $(this.el + ' .page-next').click(function () {
+                var current = _this.current;
+                var pages = _this.pages;
+
+                if (current < pages - 1) {
+                    current += 1
+                    _this.current = current;
+                    _this.pageChange(current);
+                    _this.rendorPage(current + 1, current);
+                } else {
+                    $('.pagination + span').hide();
+                }
+                _this.jumpto();
+            })
+        };
+    };
+    function resizeSlide(el) {
+        var load = 0;
+        var timer = setInterval(function () {
+            load++;
+            var img_h = $(el + ' .imgs-container li').width();
+            $(el + " .imgs-container").css('height', img_h);
+            $(el + " .imgs-container").show();
+            if (load > 2) {
+                clearInterval(timer);
+            }
+        }, 300);
+    }
+
+    $.fn.gkComment = function (options) {
+        var that = this;
+        if (window.underscore == undefined) {
+            window.underscore = _.noConflict();
+        }
+        var defaults = {
+            limit: 5,//每页限制几条
+            position: 'bottom',
+            top_number: 2,
+            display_comment: true,
+            display_star_arrow: false,
+            score_position: 'left',
+            pagination_type: '',
+            comment_star_position: 'left',
+            display_score_detail: false,
+            top_href: '',
+            active: true,
+            slide_number: 5,
+            remove_elements: [],
+            slide_resize: '',
+            site_type: 0, //0单页，1 3.0商城效果1，2 商城效果2
+            context_direction: 'left',//阅读方向
+            slide_show_type: 'picture',//none 或者 picture 或者 comment
+            show_text_comment: false,
+            func: {
+                showlevel: showlevel
+            },
+            'data_type': 'json'
+        };
+        var opts = $.extend(defaults, options);
+        if (!opts.active) { return; }
+        if (opts.display_comment == '0') {
+            opts.display_comment = false;
+        }
+        if (opts.display_score_detail == '0') {
+            opts.display_score_detail = false;
+        }
+
+        return this.each(function () {
+            var that = this;
+            var $this = $(this);
+            var this_id = $this.attr('id') || '';
+            var this_class = $this.attr('class') || '';
+            var el = this_id == '' ? '.' + this_class : '#' + this_id;
+
+            /*********************买家秀新弹窗********************/
+            $(document).on('click', el + ' .imgs-container li,' + el + ' .photo-gallery-container ul li', function () {
+                $(el + ' .customerShow-zoom').show();
+                var index = $(this).find('img').eq(0).attr("data-index") || 0;
+                index = index ? index : ($(this).find('video').eq(0).attr("data-index") || 0)
+                setTimeout(function () {
+                    var video = document.querySelector(".swiper-slide-active .swiper-slide-active video");
+                    if (video) {
+                        video.play();
+                    }
+                }, 200)
+                //点开买家秀上下滑动切换
+                new Swiper(el + ' .slide-comment', {
+                    direction: 'vertical',
+                    initialSlide: index,
+                    pagination: {
+                        el: el + ' .slide-comment .swiper-pagination',
+                        clickable: true,
+                    },
+                    navigation: {
+                        nextEl: el + ' .swiper-next-button1',
+                        prevEl: el + ' .icon-arrow-up',
+                    },
+                    on: {
+                        slideChangeTransitionEnd: function () {
+                            //当滑动到最后一屏时，提示“已經是最后一條了”
+                            var len = $(el + ' .slide-comment >.swiper-wrapper>.swiper-slide').length;
+                            var index = this.activeIndex;
+                            // console.log(len);
+                            if (index == (len - 1)) {
+                                $(el + ' .next-screen').html(window.already_last_comment);
+                                $(el + ' .slide-comment .icon-arrow-down1').hide();
+                            } else {
+                                $(el + ' .next-screen').html(window.lang_next_comment);
+                                $(el + ' .slide-comment .icon-arrow-down1').show();
+                            }
+                            // console.log(this.activeIndex);//切换结束时，告诉我现在是第几个slide
+
+
+                            //当评论图大于两张时 左右滑动箭头显示
+                            var num = parseInt($(el + ' .slide-comment .swiper-slide-active .slide-img').find('.swiper-pagination-total').html());
+                            if (num > 1) {
+                                $(document).find(el + ' .slide-img .arrow-l, .slide-img .arrow-r').addClass('show');
+                            } else {
+                                $(document).find(el + ' .slide-img .arrow-l, .slide-img .arrow-r').removeClass('show');
+                            }
+                            setTimeout(function () {
+                                var videos = Array.from(document.querySelectorAll('.swiper-slide video'));
+                                if (videos.length) {
+                                    videos.map(function (video) {
+                                        video.pause();
+                                    })
+                                }
+                                var video = document.querySelector(".swiper-slide-active .swiper-slide-active video");
+                                if (video) {
+                                    video.play();
+                                }
+                            }, 200)
+                        },
+                    }
+                });
+
+                //同一买家的评论图片左右切换
+                new Swiper(el + ' .slide-img', {
+                    pagination: {
+                        el: el + ' .slide-img .swiper-pagination',
+                        type: 'fraction',
+                    },
+                    navigation: {
+                        nextEl: el + ' .slide-img .arrow-r',
+                        prevEl: el + ' .slide-img .arrow-l',
+                    },
+                    on: {
+                        slideChangeTransitionEnd: function () {
+                            setTimeout(function () {
+                                var videos = Array.from(document.querySelectorAll('.swiper-slide video'));
+                                if (videos.length) {
+                                    videos.map(function (video) {
+                                        video.pause();
+                                    })
+                                }
+                                var video = document.querySelector(".swiper-slide-active .swiper-slide-active video");
+                                if (video) {
+                                    video.play();
+                                }
+                            }, 200)
+                        },
+                    }
+                });
+                setTimeout(function () {
+                    $('div.swiper-slide video').attr('controls', 'controls')
+                    $('.has-video video').removeAttr('controls')
+                }, 300)
+            });
+
+            var id = opts.id || 0;
+            var review_url = opts.review_url || '';
+            if (review_url == '') {
+                review_url = '/review/lists?id=' + id;
+            }
+            //新评论
+            if (isNewComment == '1') {
+                var params = {
+                    saleId: opts.id,
+                    marketId: marketId,
+                    collId:  opts.collId || opts.id,
+                };
+                require(['getComment'], function (getComment) {
+                    getComment(params, runNewAppraise, true);
+                });
+                function runNewAppraise(res) {
+                    // console.log(res);
+                    if (res.lists.length == 0) {
+                        return;
+                    }
+                    var newLists = res.lists;
+                    var batchOneList = newLists.filter(item => item.batch == 1);
+                    var batchTwoList = newLists.filter(item => item.batch == 2);
+                    var batchThreeList = newLists.filter(item => item.batch == 3);
+                    var listOne = batchOneData(res.day);
+                    if (res.day == 1) {
+                        newLists = listOne;
+                    } else if (res.day == 2) {
+                        var today = new Date();
+                        batchTwoList.forEach(function (item) {
+                            item.fake_date = item.create_time = item.adate = formatDate(today);
+                        });
+                        newLists = [...listOne, ...batchTwoList];
+                    } else {            
+                        batchTwoList.forEach(function (item) {
+                            item.fake_date = item.create_time = item.adate = formatDate(new Date().setDate(new Date().getDate() - 1));
+                        });
+
+                        var today = new Date();
+                        batchThreeList.forEach(function (item) {
+                            item.fake_date = item.create_time = item.adate = formatDate(today);
+                        });
+                        newlists = [...listOne, ...batchTwoList, ...batchThreeList];
+                    }
+                    newLists = newLists.sort((a, b) => new Date(a.fake_date).getTime() - new Date(b.fake_date).getTime());
+                    newLists = newLists.map(v=> {v.imgs = v.imgs || []; return v;});
+                    var hasImg = newLists.filter(v=> v.imgs.length);
+                    var noImg = newLists.filter(v=> !v.imgs.length);
+                    newLists = hasImg.concat(noImg);
+                    newLists = newLists.map(v=> {
+                        v.imgs.length ? v.is_top = 1 : v.is_top = 0;
+                        return v;
+                    })
+                    res.lists = newLists;
+
+                    //day 1 数据处理
+                    function batchOneData(day) {
+                        var dateArr = [];
+                        for (let i = 0; i < 7; i++) {
+                            var previousDate = new Date();
+                            previousDate.setDate(previousDate.getDate() - i - (day - 1));
+                            dateArr.push(formatDate(previousDate));
+                        }
+
+                        batchOneList.forEach(function (item, index) {
+                            item.fake_date = item.create_time = item.adate = dateArr[index % 7];
+                        });
+                        return batchOneList;
+                    };
+
+                    that.getAndRenderData(res);
+
+                }
+            } else {
+                require(['getComment'], function (getComment) {
+                    getComment(opts.id, that.getAndRenderData);
+                });
+                // $.get(review_url, function (html) {
+                // }, opts.data_type);
+            }
+
+
+            this.getAndRenderData = function (html) {
+                var arr = html;
+                arr.lists = arr.lists.map(function(v){
+                    // 随机购买数0-5
+                    v.randomPurcahseNum = parseInt(Math.random() * 5);
+                    return v;
+                })
+                console.log(arr);
+                opts.comment_lists = arr;
+                // var avg_star = arr.data.avg_star;
+                var avg_star = arr.avg_star;
+                var avg_star_str = showlevel(avg_star);
+                var imgs = [];
+                var comm = new Comment(opts, $this);
+        
+                //查看全部評論
+                var layerTop = 0;
+                var layerWidth = 0;
+                var layerCom = $(".comment-layer");
+                if ($(".body-box").length < 1) {
+                    $("body").children().wrapAll("<div class='body-box'></div>");
+                }
+        
+                //点击查看买家秀图片库
+                $(document).on('click', '.show-title .view-more', function () {
+                    $('.photo-gallery-container,.fixed-top').addClass('translate');
+                    $('body').addClass('overflow');
+                    $('.photo-gallery-container').find('.go-back').click(function () {
+                        $(this).parents('.photo-gallery-container').removeClass('translate');
+                        $('.photo-gallery-container,.fixed-top').removeClass('translate');
+                        $('body').removeClass('overflow');
+                    });
+                    try {
+                        if (opts.position == 'top') {
+                            ga('send', "event", 'click', 'top-all-comment', 'detail');
+                        }
+                        else {
+                            ga('send', "event", 'click', 'allcomment', 'detail');
+                        }
+                    }
+                    catch (e) { }
+                });
+        
+                $(document).on("click", el + " .xingxing", function () {
+                    if (opts.position == 'top') {
+                        try {
+                            ga('send', "event", 'click', 'topxingji', 'detail');
+                        }
+                        catch (e) { }
+                    }
+                });
+                $(document).on("click", ".comment-btn", function () {
+                    if (opts.position == 'top') {
+                        try {
+                            ga('send', "event", 'click', 'top-seemore-comment', 'detail');
+                        }
+                        catch (e) { }
+                    }
+                });
+        
+                $(document).on("click", el + " .xingxing , .comment-btn", function () {
+                    if (opts.position == 'top') {
+                        if (opts.top_href == '') {
+                            layerTop = -$(document).scrollTop();
+                            layerWidth = -($(".body-box").width()) / 2;
+                            $(".body-box").css({ "position": "fixed", "top": layerTop, "left": "50%", "right": 0, "bottom": 0, "margin-left": layerWidth });
+                            $(".comment-layer").addClass("show");
+                            load_lasy(comm.limit, comm.lang.has_bottom);
+                        }
+                        else {
+                            $('html,body').animate({ scrollTop: $(opts.top_href).offset().top }, 300);
+                        }
+                    }
+                });
+                //關閉全部評論
+                $(document).on("click", ".cover-bg , #coverClose", function () {
+                    $(".body-box").css({ "position": "static", "left": 0, "margin-left": 0 });
+                    $(document).scrollTop(-layerTop);
+                    $(".comment-layer").removeClass("show");
+                });
+        
+        
+                var m = getQueryString('m');
+                if (m == '') {
+                    if (comm.getBrowserLanguage() == 'zh-cn') {
+        
+                    }
+                }
+        
+                lists = comm.lists;
+                var img_review = [];
+                if (lists.length == 0) {
+                    return;
+                }
+                var total_star = 0;
+                var ids = [];
+                var star_detail = [];
+                star_detail[1] = 0;
+                star_detail[2] = 0;
+                star_detail[3] = 0;
+                star_detail[4] = 0;
+                star_detail[5] = 0;
+                for (var i in lists) {
+                    var star = lists[i]['level'];
+                    star_detail[star] += 1;
+                    var content = lists[i]['content'];
+                    var $p = $($.parseHTML(content));
+                    var context = $p.text();
+                    if ($p.find('img').length == 0) { content = "<div>" + content + "</div>"; $p = $($.parseHTML(content)); }
+                    var src = [];
+                    total_star += parseFloat(lists[i]['level']);
+                    var options = lists[i]['options'] || '';
+                    lists[i]['content'] = context;
+                    if (isNewComment != '1') {
+                        lists[i]['imgs'] = src
+                    } else {
+                        lists[i]['imgs'].forEach(item => {
+                            imgs.push({
+                                'src': item,
+                                'img_data': lists[i],
+                                'id': lists[i]['id']
+                            })
+                        })
+                       
+                        ids.push(lists[i]['id']);
+                    }
+                    
+                    lists[i]['options'] = options;
+                    var level = lists[i]['level'];
+                    lists[i]['level_star'] = showlevel(level);
+
+                    if (lists[i]['video'] && lists[i]['video'].length && ids.indexOf(lists[i]['id']) == -1) {
+                        imgs.push({
+                            'src': lists[i]['video'][0],
+                            'img_data': lists[i],
+                            'id': lists[i]['id'],
+                            'isVideo': true
+                        });
+                        ids.push(lists[i]['id']);
+                    }
+                    $p.find('img').each(function (k, v) {
+                        var _src = $(this).attr('src');
+        
+                        src.push($(this).attr('src'));
+                        if (ids.indexOf(lists[i]['id']) == -1) {
+                            imgs.push({
+                                'src': $(this).attr('src'),
+                                'img_data': lists[i],
+                                'id': lists[i]['id']
+                            });
+                            ids.push(lists[i]['id']);
+                        }
+                    });
+                    
+                }
+                var id_lists = [];
+                for (var i in lists) {
+                    id_lists[lists[i]['id']] = lists[i];
+                }
+                var _review = [];
+                for (var i in img_review) {
+                    _review.push(img_review[i]);
+                }
+
+                if (!imgs.length && opts.slide_show_type=='comment' && opts.show_text_comment) {
+                    var len = Math.min(5, lists.length);
+                    for (var i = 0; i < len; i++) {
+                        imgs.push({
+                            'src': '',
+                            'img_data': lists[i],
+                            'id': lists[i]['id']
+                        });
+                    }
+                }
+        
+                avg_star = total_star / lists.length;
+                avg_star = avg_star.toFixed(1);
+                avg_star_str = showlevel(avg_star);
+                comm.setAvgStar(avg_star);
+                var level_detail = [];
+                for (var i in star_detail) {
+                    var s = star_detail[i] / lists.length;
+                    level_detail[i] = parseInt(s.toFixed(2) * 100) + '%';
+                }
+                if (imgs.length == 0 && !opts.display_comment) {
+                    $(el).remove();
+                    for (var i in opts.remove_elements) {
+                        $(opts.remove_elements[i]).remove();
+                    }
+                }
+                var data = {
+                    'config': opts,
+                    'imgs': imgs,
+                    'img_review': imgs,
+                    'comment_lists': lists,
+                    'avg_star': avg_star,
+                    'avg_star_str': avg_star_str,
+                    'id_lists': id_lists,
+                    'lang': comm.lang,
+                    "position": opts.position,
+                    'total': lists.length,
+                    'top_number': comm.top_number,
+                    'level_detail': level_detail,
+                    'random_purcahse_num': comm.random_purcahse_num,
+                    'show_more_btn': comm.show_more_btn,
+                };
+                var tpl = underscore.template(template);
+                var text = tpl(data);
+                $this.html(text);
+                comm.setLists(lists);
+                comm.init();
+        
+                if (imgs.length < 4) {
+                    $('.customer-show').remove();
+                }
+                $(el + " .imgs-container").hide();
+                setTimeout(function () {
+                    new Swiper(el + ' .horizontal-list', {
+                        slidesPerView: 1.6,
+                        // centeredSlides: true,
+                        spaceBetween: 10,
+                        pagination: {
+                            el: '.horizontal-list .swiper-pagination',
+                            clickable: true,
+                        },
+                    });
+                    new Swiper(el + ' .imgs-container', {
+                        slidesPerView: 3.7,
+                        spaceBetween: 2,
+                        freeMode: true,
+                        pagination: {
+                            el: el + ' .imgs-container .swiper-pagination',
+                            clickable: true,
+                        },
+                        initialSlide: 0,
+                        observer: true,//修改swiper自己或子元素时，自动初始化swiper
+                        observeParents: true//修改swiper的父元素时，自动初始化swiper
+                    });
+                    resizeSlide(el);
+                }, 300);
+                if (opts.slide_resize) {
+                    $(opts.slide_resize).on('click', function () {
+                        resizeSlide(el);
+                    });
+                }
+                if (opts.keywords && opts.position == 'top') {
+                    //评论关键词
+                    getCommentKeywords();
+                }
+            }
+
+        });
+    }
+
+    
+
+    //点击向左、向右按钮
+    $(document).on('click', '.arrow', function (e) {
+        e.stopPropagation();
+        var first = window.lang_first_picture;
+        var last = window.lang_last_picture;
+        var all_li = $(this).closest('.zoom-container').prev().find('ul').html();
+        var type = $(this).attr('data-type');
+        if (type == 'right') {
+            index++;
+            if (index <= (len - 1)) {
+                // console.log(all_li.length);
+                $(this).closest('.zoom-content').find('ul').html(all_li);
+                $(this).closest('.zoom-content').find('ul li').hide().eq(index).show();
+            } else {
+                index = len - 1;
+                alert(window.lang_last_picture);
+            }
+        } else if (type == 'left') {
+            index--;
+            if (index >= 0) {
+                $(this).closest('.zoom-content').find('ul').html(all_li);
+                $(this).closest('.zoom-content').find('ul li').hide().eq(index).show();
+            } else {
+                index = 0;
+                alert(window.lang_first_picture);
+            }
+        }
+    });
+    // 阻止视频点击冒泡
+    $(document).on('click', '.swiper-slide video', function (e) {
+        e.stopPropagation();
+    })
+    $(document).on('click', '.comment-pics li', function () {
+        setTimeout(function () {
+            $('.swiper-slide video').attr('controls', 'controls')
+            var video = document.querySelector(".comment-zoom-container .swiper-slide-active video");
+            if (video) {
+                video.play();
+            }
+            $('.has-video video').removeAttr('controls')
+        }, 300)
+    })
+    $(document).on('click', '.zoom', function () {
+        var $this = $(this)
+        setTimeout(function () {
+            if ($this.css('display') == 'none') {
+                var videos = Array.from(document.querySelectorAll('.swiper-slide video'));
+                if (videos.length) {
+                    videos.map(function (video) {
+                        video.pause();
+                    })
+                }
+            }
+        }, 200)
+    })
+})(window.jQuery || {});

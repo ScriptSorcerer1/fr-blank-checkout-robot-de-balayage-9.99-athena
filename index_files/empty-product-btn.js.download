@@ -1,0 +1,1 @@
+"use strict";!function(){var t=store.get("sinfo");if(t){var o=(t=JSON.parse(store.get("sinfo"))).skus.filter(function(t){return 0<t.stock}),n='<a href="/" class="empty-product">'.concat(emptyProductBtn,"</a>"),s=$("#buyNow, .buynow, .buy-now, .addcart-bar-buynow, .buynow-btn");o.length||s.hasClass("buynow-hide")||s.addClass("buynow-hide").before(n)}}();

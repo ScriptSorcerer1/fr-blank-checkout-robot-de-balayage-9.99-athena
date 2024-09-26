@@ -1,0 +1,58 @@
+(function () {
+  $(function(){
+    $('body').addClass('no-sku');
+  })
+  //获取主题色，
+  if (theme && theme.length > 0) {
+    var themeColor = theme.slice(theme.lastIndexOf('/') + 1);
+    $(".body-box").addClass(themeColor + "-theme");
+  };
+
+  if (langTag === 'EN' && closeCountDown === '0') {
+    $(".count-down").countDown(endDate, {
+      "lang": langCountDown
+    });
+  };
+
+  var sinfo = store.get('sinfo');
+  if (typeof sinfo != 'undefined'){
+    sinfo = JSON.parse(sinfo);
+    if (sinfo) {
+      $('.price-box .final-price').html(currencyPos ? (symbol + ' ' + '<span class="format-price">' + publiceFormatCurrency(sinfo.finalPrice) + '</span>') : ('<span class="format-price">' + publiceFormatCurrency(sinfo.finalPrice) + '</span>' + ' ' + symbol))
+      $('.old-price .gui-money').html(currencyPos ? (symbol + ' ' + '<span class="toFixed-0">' + publiceFormatCurrency(sinfo.price) + '</span>') : ('<span class="toFixed-0">' + publiceFormatCurrency(sinfo.price) + '</span>' + ' ' + symbol))
+    }
+  }
+
+  if(typeof comment != 'undefined') {
+    if(typeof ifShowTopComment != 'undefined' && Number(ifShowTopComment)) {
+      comment(
+        {
+          position: 'top',
+          pagination_type: 'block',
+          slide_show_type:  Number(ifShowTopComment) === 2 ? 'picture' : 'none',
+          comment_star_position: 'right',
+          display_comment: true
+        },
+        {
+          position: 'bottom',
+          pagination_type: 'block',
+          slide_show_type: 'picture',
+          comment_star_position: 'right',
+          display_comment: true
+        }
+      )
+      
+    }else{
+      comment(
+        {},
+        {
+          position: 'bottom',
+          pagination_type: 'block',
+          slide_show_type: 'picture',
+          comment_star_position: 'right',
+          display_comment: true
+        }
+      )
+    }
+  };
+})();

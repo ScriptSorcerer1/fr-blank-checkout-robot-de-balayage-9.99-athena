@@ -1,0 +1,170 @@
+(function () {
+  store.set("location_href", location.href);
+  customerApi
+    .getDetailSinfo(
+      { saleId: detailInfoData.saleId, collId: detailInfoData.collId, currencyId , isHiddenPromotion: detailInfoData.isHiddenPromotion || 0},
+      { async: false }
+    )
+    .then(res => {
+      if (typeof res == 'object'){
+        formatVirtualSkus(res);
+      }else{
+        formatVirtualSkus(detailInfoData.sinfoPhp);
+        customerApi.jsErrorLog({
+          url: '/gservice?name=sale&action=getSinfo',
+          message: res,
+        });
+      }
+    })
+    .catch(err => {
+      console.log(err);
+      formatVirtualSkus(detailInfoData.sinfoPhp);
+    });
+
+  //如果真实skus、options为空  push虚拟规格
+  function formatVirtualSkus(data) {
+    data = processingVirtualSpecification(data);
+    formatPromotions(data);
+    storeInfo(data);
+  }
+
+  // 处理虚拟规格数据
+  function processingVirtualSpecification (data) {
+    let fakeSkus = data.fakeSkus;
+    if (
+      fakeSkus.virtualSkus &&
+      fakeSkus.virtualSkus.length > 0 &&
+      fakeSkus.virtualOptions.length > 0
+    ) {
+      fakeSkus.virtualOptions.forEach(item => {
+        item.values = item.values.filter(v => v.id.toString().indexOf('OP') != -1);
+      });
+
+      if (data.skus.length == 0) {
+        data.skus = fakeSkus.virtualSkus;
+        for (let n of fakeSkus.virtualOptions) {
+          data.options.push(n);
+        }
+        fakeSkus.realOptions.forEach(v => {
+          fakeSkus.virtualOptions.forEach(item => {
+            let index = data.options.findIndex(j => j.id == v.id);
+            if (v.id != item.id && index == -1) {
+              data.options.push(v);
+            }
+          });
+        });
+      } else {
+        let virValues = [];
+        for (let n of fakeSkus.virtualSkus) {
+          data.skus.push(n);
+        }
+        data.options.forEach(o => {
+          fakeSkus.virtualOptions.forEach(fo => {
+            if (o.id == fo.id) {
+              for (let n of fo.values) {
+                o.values.push(n);
+              }
+            } else {
+              virValues = fakeSkus.realOptions.filter(e => e.id != fo.id);
+              if (virValues.length > 0) {
+                virValues.forEach(va => {
+                  va.values.forEach(vva => {
+                    let index = o.values.findIndex(ov => ov.id == vva.id);
+                    if (index == -1) {
+                      o.values.push(vva);
+                    }
+                  });
+                });
+              }
+            }
+          });
+        });
+        data.options.sort((a, b) => {
+          return a.sort - b.sort;
+        });
+      }
+    }
+    return data;
+  }
+  // 多币种,促销针对不同币种设置的价格处理【包含数量，价格，提示语】
+  function formatPromotions(data) {
+    let symbolList = [
+      {
+        id: 14,
+        name: 'SAR'
+      },
+      {
+        id: 1,
+        name: 'AED'
+      },
+      {
+        id: 25,
+        name: 'KWD'
+      },
+      {
+        id: 34,
+        name: 'OMR'
+      },
+      {
+        id: 40,
+        name: 'QAR'
+      },
+      {
+        id: 38,
+        name: 'BHD'
+      }
+    ];
+    let curName = symbolList.find(v => v.id == currencyId);
+    let newSymbol = curName ? curName.name : symbol;
+    var giftSinfo = []; //赠品的商品数据，用于提交订单时处理虚拟规格sku
+    data.promotion.forEach(function (v) {
+      if (v.items) {
+        v.items.forEach(item => {
+          var fakeSkus = item.fakeSkus;
+          if (fakeSkus && fakeSkus.virtualSkus && fakeSkus.virtualSkus.length && fakeSkus.virtualOptions.length) {
+            var flag = giftSinfo.some( v=> v.id ===item.id);
+            if(!flag) {
+              giftSinfo.push(item);
+            }
+            item = processingVirtualSpecification(item)
+          }
+        })
+      }
+      let promotionCurrentCurrency = v.currency
+        ? v.currency.find(j => j.currencyId == currencyId)
+        : '';
+      if (isMultiCurrency && promotionCurrentCurrency) {
+        v.reach = promotionCurrentCurrency.reachValue;
+        v.value = promotionCurrentCurrency.value;
+        v.name = promotionCurrentCurrency.name || v.name;
+        v.desc = promotionCurrentCurrency.name || v.desc;
+      }
+
+      // 调价捆绑名称修改 【单个商品价格 x 商品个数】
+      if (detailInfoData.hasSitePrice && v.rule == 11 && v.name.indexOf(v.reach) == -1) {
+        let singlePrice = parseInt(v.reach / v.value);
+        singlePrice =
+          singlePrice < v.reach / v.value ? (v.reach / v.value).toFixed(1) : singlePrice;
+        singlePrice =
+          currencyPos || curName ? newSymbol + ' ' + singlePrice : singlePrice + ' ' + newSymbol;
+        v.name = singlePrice + ' x ' + v.value;
+      }
+    });
+    data.giftSinfo = giftSinfo;
+  }
+  
+  // 存储商品信息
+  function storeInfo(data) {
+    store.remove('sinfo');
+    store.set('sinfo', JSON.stringify(data));
+
+    //商城模板 sinfo存入数组
+    let sinfoArr = JSON.parse(store.get('sinfoArr')) || [];
+    if (siteTemplate.indexOf('SGKS') == -1) {
+      let hasIndex = sinfoArr.findIndex(v => v.id == data.id);
+      hasIndex == -1 ? sinfoArr.push(data) : sinfoArr.splice(hasIndex, 1, data);
+      store.remove('sinfoArr');
+      store.set('sinfoArr', JSON.stringify(sinfoArr));
+    }
+  }
+})();

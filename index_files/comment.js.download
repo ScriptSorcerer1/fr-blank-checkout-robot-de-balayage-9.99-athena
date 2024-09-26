@@ -1,0 +1,391 @@
+(function () {
+  let lang = commentJsData.lang;
+
+  let addComment = function (opts) {
+    let options = {
+      id: commentJsData.saleId,
+      lang: lang
+    };
+    opts = $.extend(options, opts);
+    let animU = $('<div class="comment-down"/>');
+    let commentBox = $('<div class="comment-tk"/>');
+    let commentHead = $('<div class="eval-top"><span>' + opts.lang.eval_title + '</span></div>');
+    let evalClose = $('<i class="iconfont iconcart-close pointer"></i>');
+    commentHead.append(evalClose);
+    commentBox.append(commentHead);
+    let evalBox = $('<div class="eval-box"/>');
+    let evalHtml = `<div class="eval-item">
+                    <label class="eval-label">${opts.lang.name}<i class="red">*</i></label>
+                    <input class="item-input" name="name" type="text" value="" placeholder="${opts.lang.name_pro}"/>
+                </div>
+                <div class="eval-item">
+                    <label class="eval-label">${opts.lang.email}<i class="red">*</i></label>
+                    <input class="item-input" name="email" type="text" value="" placeholder="${opts.lang.email_pro}"/>
+                </div>
+                <div class="eval-item">
+                    <label class="eval-label">${opts.lang.phone}</label>
+                    <input class="item-input" name="phone" value="" type="number" placeholder="${opts.lang.phone_pro}"/>
+                </div>
+                <div class="eval-item">
+                    <label class="eval-label">${opts.lang.pic}</label>
+                    <div class="img-box clearfix">
+                        <ul></ul>
+                        <div class="img-btn">
+                            <i class="iconfont iconshangchuan"></i>
+                            <input class="item-file-img" multiple="multiple" name="pic" value="" type="file"/>
+                        </div>
+                    </div>
+                </div>
+                <div class="eval-item">
+                    <label class="eval-label">${opts.lang.level}<i class="red">*</i></label>
+                    <div class="rating">
+                        <input type="radio" name="rating" id="5" value="5" />
+                        <label for="5" class="iconfont"><i class="iconfont icon-Star"></i></label>
+                        <input type="radio" name="iconfont" id="4" value="4" />
+                        <label for="4" class="iconfont"><i class="iconfont icon-Star"></i></label>
+                        <input type="radio" name="rating" id="3" value="3" />
+                        <label for="3" class="iconfont"><i class="iconfont icon-Star"></i></label>
+                        <input type="radio" name="rating" id="2" value="2" />
+                        <label for="2" class="iconfont"><i class="iconfont icon-Star"></i></label>
+                        <input type="radio" name="rating" id="1" value="1" />
+                        <label for="1" class="iconfont"><i class="iconfont icon-Star"></i></label>
+                    </div>
+                </div>
+                <div class="eval-item">
+                    <label class="eval-label">${opts.lang.content}<i class="red">*</i></label>
+                    <textarea class="item-input" name="content" value=""  placeholder="${opts.lang.content_pro}"/>
+                </div>`;
+    evalBox.html(evalHtml);
+    let evalBtn = $('<div class="pointer eval-btn eval-add">' + opts.lang.submit + '</div>');
+    commentBox.append(evalBox);
+    commentBox.append(evalBtn);
+    animU.append(commentBox);
+    $('body').append(animU);
+
+    //提交评论
+    evalBtn.click(function () {
+      let evalData = {};
+      evalData.sale_id = opts.id;
+      evalData.name = $("input[name='name']").val();
+      if (evalData.name.length <= 0) {
+        toast(opts.lang.name_pro);
+        return false;
+      }
+      evalData.email = $("input[name='email']").val();
+      let emailReg = new RegExp(/\w+([-+.]\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*/);
+      if (!emailReg.test(evalData.email)) {
+        toast(opts.lang.email_pro);
+        return false;
+      }
+      evalData.phone = $("input[name='phone']").val();
+      evalData.level = $("input[name='rating']:checked").val();
+      if (evalData.level.length <= 0) {
+        toast(opts.lang.level_pro);
+        return false;
+      }
+      evalData.content = $("textarea[name='content']").val();
+      if (evalData.content.length <= 0) {
+        toast(opts.lang.content_pro);
+        return false;
+      }
+      $.ajax({
+        url: '/appraise/addappraise',
+        type: 'post',
+        data: evalData,
+        success: function (res) {
+          let resObj = JSON.parse(res);
+          if (resObj.code == 0) {
+            toast(opts.lang.success);
+            evalHide();
+          }
+        }
+      });
+    });
+
+    //关闭弹框
+    evalClose.click(function () {
+      evalHide();
+    });
+
+    //关闭弹框
+    function evalHide() {
+      let top = $('.body-box').offset().top;
+      $('.body-box').css({ position: 'static', 'margin-left': 'auto', left: 'auto' });
+      $(document).scrollTop(-1 * top);
+      animU.remove();
+    }
+
+    //点击删除
+    $('body').on('click', '.file-del', function () {
+      let parent = $(this).parent();
+      let index = parent.index();
+      fileList.splice(index, 1);
+      parent.fadeOut(850, function () {
+        parent.remove();
+      });
+      let filess = document.getElementById('choose-file');
+      filess.value = '';
+    });
+
+    //上传图片
+    let list = $('.img-box ul'),
+      file = $('.item-file-img'),
+      fileList = [];
+    file.on('change', function (e) {
+      //上传过图片后再次上传时限值数量
+      let numold = $('.img-box img').length;
+      if (numold >= 6) {
+        toast(opts.lang.img_max);
+        return;
+      }
+
+      //限制单次批量上传的数量
+      let num = e.target.files.length;
+      let numall = numold + num;
+      if (num > 6) {
+        layer.alert('opts.lang.img_max');
+        return;
+      } else if (numall > 6) {
+        layer.alert('opts.lang.img_max');
+        return;
+      }
+      curFile = this.files;
+      fileList = fileList.concat(Array.from(curFile));
+      for (let i = 0, len = curFile.length; i < len; i++) {
+        reviewFile(curFile[i]);
+      }
+      $('.img-box ul').fadeIn(2500);
+    });
+    function reviewFile(file) {
+      //实例化fileReader,
+      let fd = new FileReader();
+
+      //获取当前选择文件的类型
+      let fileType = file.type;
+
+      //调它的readAsDataURL并把原生File对象传给它，
+      fd.readAsDataURL(file); //base64
+
+      //监听它的onload事件，load完读取的结果就在它的result属性里了
+      fd.onload = function () {
+        if (/^image\/[jpeg|png|jpg|gif]/.test(fileType)) {
+          list
+            .append(
+              '<li><img src="' +
+                this.result +
+                '" alt="" ><span class="file-del"><i class="iconfont iconcart-close"></i></span></li>'
+            )
+            .children(':last')
+            .hide()
+            .fadeIn(2500);
+        } else {
+          list.append(
+            '<li><span class="file-name">' +
+              file.name +
+              '</span><span class="file-del"><i class="iconfont iconcart-close"></i></span></li>'
+          );
+        }
+      };
+    }
+  };
+
+  let comment = function (opts, opt) {
+    let options = {
+      id: commentJsData.saleId,
+      slide_number: 5,
+      site_type: 1,
+      lang: lang,
+      review_url: '/gservice?name=appraise&action=getGAppraise&id=' + commentJsData.saleId,
+      keywords: true,
+      collId: commentJsData.collId || '',
+    };
+    let options2 = {
+      id: commentJsData.saleId,
+      slide_number: 5,
+      site_type: 1,
+      lang: lang,
+      add: false,
+      review_url: '/gservice?name=appraise&action=getGAppraise&id=' + commentJsData.saleId,
+      collId: commentJsData.collId || '',
+      totalCallback: function (total, avg_star) {
+        if (Math.round(avg_star) > 5) {
+          $('#commentNumber').html('(5.0)');
+        }
+        if (total <= 0) {
+          $('.comment-empty').show();
+          $('.add-box').remove();
+        } else {
+          $('#commentTotal').html(total);
+          $('.comment-empty').remove();
+          $('.add-box').removeClass('hide');
+        }
+      }
+    };
+
+    opts = $.extend(options, opts);
+    opt = $.extend(options2, opt);
+    renderCommentStar(commentJsData.saleId, commentJsData.collId);
+
+    let commentBottomLabel = $('.gui-comment-bottom');
+    let commentTopLabel = $('.gui-comment-top');
+
+    //滚动监听
+    window.addEventListener('scroll', scroll);
+    let renderBottomCompleted = !commentBottomLabel.length;
+    let renderTopCompleted = !commentTopLabel.length;
+    let clientY = $(window).height(); //浏览器窗口高度
+    function scroll() {
+      let offsetTop = $(document).scrollTop();
+      if (commentBottomLabel.length && !renderBottomCompleted) {
+        let offsetHeight = commentBottomLabel.offset().top - 50 - clientY;
+        if (offsetTop >= offsetHeight) {
+          renderBottomCompleted = true;
+          commentBottom();
+        }
+      }
+      if (commentTopLabel.length && !renderTopCompleted) {
+        let offsetHeight = commentTopLabel.offset().top - 50 - clientY;
+        if (offsetTop >= offsetHeight) {
+          renderTopCompleted = true;
+          commentTopLabel.gkComment(opts);
+        }
+      }
+      if (renderBottomCompleted && renderTopCompleted) {
+        window.removeEventListener('scroll', scroll);
+      }
+    }
+
+    function commentBottom() {
+      $('.gui-comment-bottom').gkComment(opt); 
+
+      if (opt.add) {
+        let addBox = $('<div class="add-box hide"/>');
+        let addBtn = $('<div class="pointer eval-add">' + opt.lang.eval_add + '</div>');
+        addBox.append(addBtn);
+        addBox.insertAfter($('.gui-comment-bottom'));
+        addBtn.click(function () {
+          addCommentf();
+        });
+        let commentEmpty = $('<div class="comment-empty flex-btw"/>');
+        let addBtnE = $('<div class="pointer eval-add">' + opt.lang.eval_add + '</div>');
+        let emptyL = `<div class="comment-empty-left">
+                            <p>
+                                <i class="iconfont icon-Star"></i>
+                                <i class="iconfont icon-Star"></i>
+                                <i class="iconfont icon-Star"></i>
+                                <i class="iconfont icon-Star"></i>
+                                <i class="iconfont icon-Star"></i>
+                            </p>
+                            <p>${commentJsData.firstCommentLang}</p>
+                        </div>`;
+        commentEmpty.append(emptyL);
+        commentEmpty.append(addBtnE);
+        commentEmpty.insertAfter($('.gui-comment-bottom'));
+        addBtnE.click(function () {
+          addCommentf();
+        });
+      }
+      //打开评论弹框
+      function addCommentf() {
+        let top = -1 * $(document).scrollTop();
+        let mLeft = (-1 * $('.body-box').width()) / 2;
+        $('.body-box').css({
+          position: 'fixed',
+          top: top,
+          left: '50%',
+          right: 0,
+          bottom: 0,
+          'margin-left': mLeft
+        });
+        addComment({});
+        $('.comment-down').addClass('comment-up');
+      }
+    }
+
+    // 渲染评论星级
+    function renderCommentStar(saleId, collId) {
+      if (!$('#commentNumber').length && !$('#star').length) {
+        return;
+      }
+     
+      require(['getComment'], function (getComment) {
+        if(isNewComment == '1') {
+          var params = {
+            saleId: saleId,
+            marketId: marketId,
+            collId:  collId || saleId,
+          };
+          
+          getComment(params, function (data) {
+            renderStarFn(data);
+          }, true);
+        } else {
+          getComment(saleId, function (data) {
+            renderStarFn(data);
+          });
+        }
+      });
+    }
+  };
+
+  // 渲染评论星级处理
+  function renderStarFn(data) {
+    if (!data.lists.length) {
+      return;
+    }
+    let total_star = 0;
+    data.lists.map(v => {
+      total_star += v.level;
+    });
+    let avg_star = (total_star / data.lists.length).toFixed(1);
+    $('#commentNumber').html('(' + avg_star + ')');
+    let protocol = location.protocol;
+    let host = protocol + '//' + location.host;
+    if(!$('#commentNumber').siblings('.comment-imgj').length) {
+      $('#commentNumber').after(
+        '<img src="' + host + '/front/res/img/starj.gif" class="comment-imgj">'
+      );
+    }
+    //星級評價
+    $('#star').html(showStar(avg_star));
+  }
+
+  let showStar = function (star) {
+    let xingxing = parseInt(star);
+    let star_str = '';
+    let i = 0;
+    for (i = 0; i < xingxing; i++) {
+      star_str += '<i class="iconfont icon-StarFilled"></i>';
+    }
+    if (star != xingxing) {
+      star_str += '<i class="iconfont icon-star-half2"></i>';
+      i++;
+    }
+    let left = 5 - i;
+    for (let j = 0; j < left; j++) {
+      star_str += '<i class="iconfont icon-Star"></i>';
+    }
+    return star_str;
+  };
+
+  //调取评论关键词
+  window.getCommentKeywords = function() {
+    let params = {
+      saleId: commentJsData.saleId,
+      langId: languageId,
+    };
+    getAppraiseKeyword(params).then(res => {
+      let html = '';
+      if (res.length > 0) {
+        res.forEach(item => {
+          html += `<span class="key-item">${item}</span>`;
+        });
+        $('.comments-wrap .comment-keywords').removeClass('hide').html(html);
+        
+      }
+    })
+  }
+
+  window.comment = comment;
+  window.showStar = showStar;
+})();
