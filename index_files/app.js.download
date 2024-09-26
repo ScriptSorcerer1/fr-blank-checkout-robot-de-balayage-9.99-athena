@@ -1,0 +1,816 @@
+(function ($) {
+    $(document).ready(function () {
+        showStar($('.item-stars'));
+
+        $('img.lazyload').each(function (index, item) {
+            if (!$(this).attr('src')) {
+                $(this).attr('src', $(this).attr('data-original'));
+            }
+        });
+    })
+    function showStar(item) {
+        item.each(function (index, val) {
+            var level = $(this).find('b').text();
+            level = level >= 5.0 ? '5.0' : level;
+            var xingxing = parseInt(level);
+            var star_str = '';
+            for (i = 0; i < xingxing; i++) {
+                star_str += '<i class="iconfont icon-StarFilled"></i>';
+            }
+            if (level != xingxing) {
+                star_str += '<i class="iconfont icon-star-half2"></i>';
+                i++;
+            }
+            var left = 5 - i;
+            for (var j = 0; j < left; j++) {
+                star_str += '<i class="iconfont icon-Star"></i>';
+            }
+            star_str += '<b>(' + level + ')</b>';
+            $(this).html(star_str);
+        });
+
+    }
+
+    function getCountTime(time, intervalTime){
+        let timeStr=""
+        if(intervalTime){
+            let storeTime= store.get("seckill_count_down");
+            timeStr=storeTime;
+            if(!storeTime || new Date().getTime()>= storeTime){
+                timeStr = new Date().getTime()+ intervalTime*60*1000;
+                store.set("seckill_count_down", timeStr);
+            }
+        }
+        return timeStr? new Date(timeStr) : time;
+    }
+
+    //isLoop =ture 用户可以在扩展配置中配置时间（以分为单位）进行循环倒计时  intervalTime 表示扩展配置中配置的时间
+    $.fn.countDown = function (date, opts, isLoop=false, intervalTime = 0) {
+        if(isLoop){
+            var dateCopy = date;
+            date = getCountTime(date, intervalTime);
+        }
+        opts = $.extend({
+            lang: {
+                "day": '天',
+                "hour": '時',
+                "minute": '分',
+                "second": '秒',
+                "separator": ':'
+            }
+        }, opts);
+        var $this = $(this);
+        var timer = null;
+
+        opts.lang.hour = opts.lang.hour || '';
+        opts.lang.minute = opts.lang.minute || '';
+        opts.lang.second = opts.lang.second || '';
+
+        var cdown = function () {
+            if (!date) {
+                date = new Date(new Date().setHours(24, 0, 0, 0));
+            }
+
+            if (typeof date == 'string') {
+                var s = date.replace(/-/g, "/");
+                if (s.length <= 10) s = s + ' 23:59:59';
+                date = new Date(s);
+            }
+
+            var startDate = new Date();
+            var time = date.getTime() - startDate.getTime();
+            var timeMs = time;
+            time = Math.floor(time / 1000);
+            var d = Math.floor(time / 3600 / 24);
+            var h = Math.floor((time % (3600 * 24)) / 3600);
+            var m = Math.floor((time % 3600) / 60);
+            var s = (time % 3600) % 60;
+            var ms = (timeMs % 3600) % 60 % 100;
+
+            if (time <= 0) {
+                d = h = m = s = 0;
+                timer && clearInterval(timer);
+                if(isLoop){
+                    var pp= getCountTime(dateCopy, intervalTime);
+                    $this.countDown(pp, opts, true, intervalTime);
+                    return false;
+                }
+            }
+
+            if (d < 10) d = "0" + d;
+            if (h < 10) h = "0" + h;
+            if (m < 10) m = "0" + m;
+            if (s < 10) s = "0" + s;
+
+            if(isLoop){
+                //添加毫秒展示
+                var span = d === '00' ? '' : '<span class="timerk day">' + d + '</span>' + opts.lang.day + (opts.lang.day == ':'?"": opts.lang.separator);
+                $this.html(span + '<span class="timerk">' + h + '</span>' + opts.lang.hour + opts.lang.separator
+                    + '<span class="timerk">' + m + '</span>' + opts.lang.minute + opts.lang.separator
+                    + '<span class="timerk">' + s + '</span>'+ opts.lang.second + opts.lang.separator
+                    + '<span class="timerk">' + ms + '</span>');
+            }else{
+                var span = d === '00' ? '' : '<span class="timerk day"><span>' + d +'</span>' +(opts.lang.day == ':'? "" : ('<i>' + opts.lang.day + '</i>')) + '</span>' + (opts.lang.day == ':'? opts.lang.day: "");
+                $this.html(span + '<span class="timerk"><span>' + h +'</span> <i>' + opts.lang.hour + '</i></span>' + opts.lang.separator
+                    + '<span class="timerk"><span>' + m +'</span> <i>' + opts.lang.minute + '</i></span>' + opts.lang.separator
+                    + '<span class="timerk"><span>' + s +'</span> <i>' + opts.lang.second + '</i></span>');
+            }
+            
+
+            if (Math.floor(startDate.getTime() / 1000) == Math.floor(date.getTime() / 1000)) {
+                return;
+            }
+        }
+        if(isLoop){
+            //循环的倒计时需要显示毫秒，相应时间也要缩短
+            timer = setInterval(function () {
+                cdown();
+            }, 200);
+        }else{
+            timer = setInterval(function () {
+                cdown();
+            }, 1000);
+        }
+       
+    }
+
+    var _promotion = function (opts) {
+        var options = {
+            "style": 1,
+            "hotStyle": 1,
+            "hot": $("#promotion-hot"),//促销第一条
+            "list": $("#promotion-list"),//商品和全站促销
+            "salePromlist": $(".sale-prom-list"),//商品促销
+            "sitePromlist": $(".site-prom-list"),//全站促销
+            "yf": $("#promotion-yf"),//运费促销
+            "saleProm": [],
+            "cartProm": [],
+            "lang": {},
+            "symbolBefore": true,
+            "symbol": '',
+            "sgks": 0
+        };
+        opts = $.extend(options, opts);
+
+        try {
+            if (typeof (cartProm) != "undefined") {
+                opts.cartProm = cartProm;
+            };
+        } catch (e) { }
+
+        try {
+            if (typeof (sinfo) != "undefined") {
+                opts.saleProm = sinfo.promotion;
+            };
+        } catch (e) { }
+
+        opts.list.empty();
+        opts.salePromlist.empty();
+        opts.sitePromlist.empty();
+        //凸显一个促销
+        var first = null, hasProms = false, hasYF = false, cnt = 0;
+        var now = Util.dateFormat();
+        for (var i = 0; i < opts.saleProm.length; i++) {
+            var prom = opts.saleProm[i];
+            if (!prom.isVisible) continue;
+            //          if(prom.start > now || prom.end < now) continue;
+            if (i === 0 && opts.hotStyle === 1 && !first) {
+                first = prom;
+            }
+            var item = $('<div class="gui-promotion-item"/>');
+            if (prom.rule == 2 && opts.sgks == 1) {
+                item.addClass("copuon-prom-item");
+                hasProms = true;
+            }
+            if (opts.style == 1) {
+                item.append($('<i class="gui-edging">' + opts.lang['addcart_promtype_' + prom.rule] + '</i>'));
+            }
+            var desc = prom.desc || prom.name;
+            if (desc) {
+                item.append($('<span>' + desc + '</span>'));
+                opts.salePromlist.append(item);
+                opts.list.append(item);
+            }
+
+            cnt++;
+        }
+        for (var i = 0; i < opts.cartProm.length; i++) {
+            var prom = opts.cartProm[i];
+            if (!prom.isVisible) continue;
+            if (prom.start > now || prom.end < now) continue;
+            if (prom.isActivity && prom.items && prom.items.length > 0 && opts.saleId) {
+                if (prom.items.indexOf(opts.saleId) == -1) continue;
+            }
+            var ruleId = [23, 24, 28, 35]; //优惠码
+            if (ruleId.includes(Number(prom.rule))) continue;
+            if (prom.rule == 22 && opts.yf.length > 0) {
+                if (opts.yf.length > 0) {
+                    if (prom.desc) {
+                        if(!prom.reach){
+                            opts.yf.html(opts.lang['addcart_promtype_' + prom.rule])
+                        }else{
+                            opts.yf.html(prom.desc)
+                        }                        
+                    } else {
+                        var yf = opts.yf.html();
+                        if (yf.indexOf('#yr#') != -1) {
+                            yf = yf.replace('#yr#', opts.symbolBefore ? "<span class='reach'>" + opts.symbol + prom.reach + "</span>" : "<span class='reach'>"  + prom.reach + ' ' + opts.symbol + "</span>" );
+                        }
+                        opts.yf.html(yf.replace('#yf#', options.symbolBefore ? "<span class='price'>" + opts.symbol  + prom.value + "</span>" : "<span class='price'>" + prom.value  + opts.symbol + "</span> "));
+                    }
+
+                    hasYF = true;
+                    $(".gui-promotion-yf").show();
+                }
+            } else {
+                if (!first && opts.hotStyle === 1) {
+                    first = prom;
+                }
+                var item = $('<div class="gui-promotion-item"/>');
+                if (hasProms && prom.rule == 20 && opts.sgks == 1) continue;
+                if (prom.rule == 20 && opts.sgks == 1) {
+                    item.addClass("copuon-prom-item");
+                }
+                if (opts.style == 1) {
+                    item.append($('<i class="gui-edging">' + opts.lang['addcart_promtype_' + prom.rule] + '</i>'));
+                }
+
+                var desc = prom.desc || prom.name;
+                if (desc) {
+                    item.append($('<p>' + desc + '</p>'));
+                    opts.list.append(item);
+                    opts.sitePromlist.append(item);
+                }
+                cnt++;
+            }
+        }
+
+        if (first && opts.hotStyle === 1) {
+            var div = $('<div class="gui-promotion-hot"/>');
+            div.append($('<i class="gui-edging">' + opts.lang['addcart_promtype_' + first.rule] + '</i>'));
+            var desc = first.desc || first.name;
+            div.append($('<p>' + desc + '</p>'));
+            opts.hot.append(div);
+        }
+
+        if ((cnt <= 1 && opts.hotStyle === 1) || (cnt <= 0 && opts.hotStyle === 0)) {
+            opts.list.parents('.gui-promotion-list').hide();            
+            opts.sitePromlist.parents('.gui-site-promotion-list').addClass('hide-important');
+        } else {
+            opts.list.parents('.gui-promotion-list').removeClass('hide');
+            if(opts.sitePromlist.html()) {
+                opts.sitePromlist.parents('.gui-site-promotion-list').removeClass('hide-important');
+            } 
+        }
+        if (cnt <= 0) {
+            opts.hot.parents('.gui-promotion-hot-box').hide();
+        } else {
+            opts.hot.parents('.gui-promotion-hot-box').removeClass('hide');
+        }
+        if (!hasYF) {
+            // opts.yf.parents('.gui-promotion-yf').hide();
+            opts.yf.html(opts.lang['free_freight']);
+        }
+
+        let hasHideClass=opts.salePromlist.parents('.gui-sale-promotion-list').hasClass("hide-important");
+        if(opts.saleProm.length&&opts.salePromlist.html()){
+            if(hasHideClass){
+                opts.salePromlist.parents('.gui-sale-promotion-list').removeClass('hide-important');
+            }
+        }else{
+            if(!hasHideClass){
+                opts.salePromlist.parents('.gui-sale-promotion-list').addClass('hide-important');
+            }
+        }
+    }
+
+    //获取用户信息
+    var _getCustInfo = function (opts) {
+        var custId = -1;
+        if ($("input[name='cust']").length > 0) {
+            custId = $("input[name='cust']").val();
+        }
+        if (custId == -1) {
+            customerApi.getCust(
+                { coll_id: opts.collId }
+                , function (res) {
+                    if (res.data == null && opts.flag) {
+                        if (opts.fun) opts.fun();
+                        return false;
+                    } else if (res.data != null) {
+                        custId = res.data;
+                        store.set("__giikin_usertoken", res.data, 360000000)
+                        if ($("input[name='cust']").length > 0) {
+                            $("input[name='cust']").val(custId.id);
+                        } else {
+                            $("body").append('<input type="hidden" name="cust" value="' + custId.id + '"/>');
+                        }
+                        if (opts.fun) opts.fun(custId);
+                    }
+
+                });
+        } else {
+            if (opts.fun) opts.fun(custId);
+        }
+    }
+
+    //获取用户id
+    var _getCustId = function (collId) {
+        var custId = -1;
+        var passId = $.cookie("PHPSESSID");
+        if (passId) {
+            var cust = get("__giikin_usertoken");
+            if (!cust) {
+                custId = -1;
+            } else {
+                custId = cust.id;
+            }
+            if (custId == -1) {
+                customerApi.getCust(
+                    { coll_id: collId }
+                    , function (res) {
+                        if (res.data == null) return false;
+                        custId = res.data.id;
+                        store.set("__giikin_usertoken", res.data, 360000000)
+                        if ($("input[name='cust']").length > 0) {
+                            $("input[name='cust']").val(JSON.stringify(res.data));
+                        }
+                    });
+            } else {
+                if ($("input[name='cust']").length > 0) {
+                    $("input[name='cust']").val(store.get('__giikin_usertoken'));
+                }
+            }
+        }
+        return custId;
+    }
+    function get(key, exp) {
+        var data = localStorage.getItem(key);
+        if (!data) return false;
+        var dataObj = JSON.parse(data);
+        if (new Date().getTime() - dataObj.time > exp) {
+            console.log('信息已过期');
+        } else {
+            var dataObjDatatoJson = dataObj.data;
+            return dataObjDatatoJson;
+        }
+    } 
+
+    //获取当前页面的a标签 from标签，追加扩展链接
+    function _getParams() {
+        $("body").on("click", "a", function () {
+            hrefCha($(this));
+        });
+        $("a").each(function (i, v) {
+            hrefCha($(this));
+        });
+        $("form").each(function (i, v) {
+            var href = $(this).attr("action");
+            if(href){
+                var newHref = getHref(href);
+                $(this).attr("action", newHref);
+            }
+           
+        });
+    }
+    //改变a标签的href
+    function hrefCha(e) {
+        var href = e.attr("href");
+        if (href == "javascript:void(0);" || href == "javascript:;") {
+            dataSrc = e.attr("data-src");
+            if (dataSrc) {
+                href = dataSrc;
+                if(href){
+                    var newHref = getHref(href);
+                    e.attr("data-src", newHref);
+                }
+            }
+        } else {
+            if(href){
+                var newHref = getHref(href);
+                e.attr("href", newHref);
+            }
+            
+        }
+    }
+    //追加推广配置
+    function getHref(sch) {
+        var href = sch;
+        var sourceHref = window.location.pathname;
+        var schurl = window.location.search;
+        if(schurl.indexOf("from=") > -1){
+            var index = sch.lastIndexOf("\?");
+            var hrefPrams = {};
+            var oldParams = getQuery(schurl) || {};
+            if(!oldParams['source_sno'] && oldParams['sno'] && oldParams['from']) oldParams['source_sno'] = oldParams['sno'];
+            if(oldParams['sno']) delete oldParams['sno'];
+            if(index > -1){
+                sch = sch.substring(index, sch.length);
+                hrefPrams = getQuery(sch) || {};
+                schurl = "";
+                if(href.substr(href.length-1,1) != "&") schurl = "&";
+            }else{
+                schurl = "?";
+            }
+            var newPrams = diff(hrefPrams,oldParams);
+            for(var key in newPrams){
+                schurl += key + "=" + newPrams[key] + "&"
+            }
+            href = href + schurl;
+        }
+        return href;
+    }
+
+    // 追加推广配置，页面链接没有from的
+    function getHref2(sch) {
+        var href = sch;
+        var guiParmas = store.get('__guid__params');
+        if(guiParmas && href) {
+            var param = null
+            Object.keys(guiParmas).forEach(v=>{
+                if(!v.includes('sno') && v !== 'coll_id'){
+                    param  = param ? param + '&' + v + '=' + guiParmas[v] : v + '=' + guiParmas[v];
+                }
+            })
+            href += href.includes('coll_id') ? param : param + '&coll_id=' + guiParmas['coll_id']
+        }
+        return href;
+    }
+
+    //删除相同的参数
+    function diff(a,b){
+        var ret = Object.assign({},b);
+        for(var key in ret){
+            if(key in a && key in b) delete ret[key];
+        }
+        return ret;
+    }
+    //获取推广参数
+    function getQuery(sch){
+        if(sch==""||sch=="?"||sch.length<2) return "";
+        var uri = sch.substr(1);
+        var s = uri.split('&');
+        var params = {};
+        var overProm = ['sno', 'category_id', 'activity_id', 'article_id', '_view', 'currency_id', 'ignore_doamin'];
+        for(var i=0;i<s.length;i++){
+            var p = s[i].split('=');
+            if(p.length>1){
+                if(p[0] == 'sno') {
+                    p[0] = "sno_id";
+                    s[i] = s[i].replace("sno","sno_id")
+                };
+                var variableRepetition = s.filter(v =>v.includes(p[0])).length;//推广链接中变量名相同的数量
+                var duplicateVal = s.filter(v => !v.includes(p[0]) && v.includes(p[1])).length;//推广链接中与变量名不同但值相同的数量
+                var justSame = s.filter(v => v === s[i]).length; // 推广链接中变量名与值完全相同的数量
+
+                //推广链接中变量名相同的变量 > 1【推广链接中变量名与值完全相同的数量 ===推广链接中变量名相同的数量，添加变量 || 添加与当前变量名、值都不同的】 
+                if(overProm.indexOf(p[0]) == -1 && (variableRepetition === 1 || variableRepetition === justSame || duplicateVal === 0)) {
+                    params[p[0]] = s[i].substr(p[0].length + 1);
+                }
+            }
+        }
+        return params;
+    }
+
+    //转换美元
+    function idToUsd(currencyId,price){
+        switch(currencyId)
+        {
+            case "19"://越南盾
+                final = price / 23239;
+                break;
+            case "9"://日币
+                final = price / 136;
+                break;
+            case "6"://港币
+                final = price / 7.8;
+                break;
+            case "1"://迪拉姆
+                final = price / 3.6;
+                break;
+            case "14"://沙特币
+                final = price / 3.7;
+                break;
+            case '12'://马来西亚币
+                final = price / 4.4;
+                break;
+            case "15"://新加坡币
+                final = price / 1.4;
+                break;
+            case "16"://泰铢
+                final = price * 0.0282;
+                break;
+            case "13"://台币
+                final = price / 29;
+                break;
+            case "10"://韩元
+                final = price * 0.0007;
+                break;
+            case '20'://菲律宾
+                final = price * 0.0183;
+                break;
+            case '44'://伊拉克第纳尔
+                final = price / 1309.61;
+                break;
+            case '11'://澳门元==》澳门帕塔卡
+                final = price / 8.074;
+                break;
+            case '15'://新加坡
+                final = price / 1.348;
+                break;
+            case '17'://土耳其里拉==》土耳其新里拉
+                final = price / 22.859;
+                break;
+            case '21'://印度尼西亚卢比==》印尼盾
+                final = price / 14873;
+                break;
+            case '22'://巴西雷尔亚==》巴西雷阿尔
+                final = price / 4.913;
+                break;
+            case '24'://阿根廷比索
+                final = price / 243.2;
+                break;
+            case '25'://科威特第纳尔
+                final = price / 0.307;
+                break;
+            case '26'://墨西哥比索
+                final = price / 17.384;
+                break;
+            case '27'://哥伦比亚比索
+                final = price / 4290.61;
+                break;
+            case '29'://兹罗提
+                final = price / 4.191;
+                break;
+            case '32'://摩洛哥迪拉姆
+                final = price / 10.188;
+                break;
+            case '33'://加拿大元
+                final = price / 1.34;
+                break;
+            case '34'://阿曼里亚尔
+                final = price / 0.385;
+                break;
+            case '35'://约旦第纳尔
+                final = price / 0.709;
+                break;
+            case '36'://匈牙利福林
+                final = price / 344.89;
+                break;
+            case '37'://罗马尼亚列伊 ==》罗马尼亚新列伊
+                final = price / 4.644;
+                break;
+            case '38'://巴林第纳尔
+                final = price / 0.377;
+                break;
+            case '39'://黎巴嫩镑
+                final = price / 15;
+                break;
+            case '40'://卡塔尔里亚尔
+                final = price / 3.641;
+                break;
+            case '42'://俄罗斯卢布
+                final = price / 81.398;
+                break;
+            case '43'://尼日利亚奈拉
+                final = price / 465.38;
+                break;
+            default:
+                final = price;
+        }
+        return formatNum(final);
+    }
+
+    //格式化数字
+    function formatNum(str){
+        var str = str + "";
+        var newStr = "";
+        var count = 0;
+        if(str.indexOf(".")==-1){
+            for(var i=str.length-1;i>=0;i--){
+                if(count % 3 == 0 && count != 0){
+                    newStr = str.charAt(i) + "," + newStr;
+                }else{
+                    newStr = str.charAt(i) + newStr;
+                }
+                count++;
+            }
+           str = newStr + ".00"; //自动补小数点后两位
+        }else{
+            for(var i = str.indexOf(".")-1;i>=0;i--){
+                if(count % 3 == 0 && count != 0){
+                    newStr = str.charAt(i) + "," + newStr;
+                }else{
+                    newStr = str.charAt(i) + newStr; //逐个字符相接起来
+                }
+                count++;
+            }
+            str = newStr + (str + "00").substr((str + "00").indexOf("."),3);
+        }
+        return str;
+    }
+
+    //加购数据
+    var addCartInfo = function(data){
+        var infoArr = {};
+        infoArr.params = store.get('__guid__params');
+        if(infoArr.params == null) infoArr.params ={};
+        infoArr.params = JSON.stringify(infoArr.params);
+        //用户id
+        var uId = $.cookie('_gkuid');
+        infoArr.uid = uId ? uId :"";
+        var url = window.location.href;
+        //链接 
+        infoArr.url = url;
+        infoArr.referrer = document.referrer || store.get('__guid_enter_url');
+        if(data){
+            infoArr.event_type = data.eventType;
+            //商城Id
+            infoArr.coll_id =data.collId;
+            infoArr.currency_id = data.currencyId;
+            if(data.orderNumber) infoArr.order_number = data.orderNumber; 
+            if(data.saleIds) infoArr.sale_ids = data.saleIds;
+            var ttStr = ['tankuangcart','tankuangbuynow','detailbuynow-confirm','detailcart-confirm','AddPaymentInfo','Purchase','buynow2','addcart2'];
+            if(ttStr.indexOf(data.eventType) !== -1){
+                infoArr.amount = data.amount;
+                infoArr.quantity = data.number;
+                if(data.pid) infoArr.sale_ids = data.pid;
+                var saleIds = '';
+                if (data.items) {
+                    for(var i = 0 ; i < data.items.length ; i++){
+                        var saleId = data.items[i].id;
+                        if(i != 0) saleIds += ","
+                        if(data.items[i].gift == 0) saleIds += saleId + "-" + data.items[i].poid;
+                    }
+                }
+                infoArr.sale_sku_ids = saleIds;
+            }
+        }
+        
+        if(typeof pixelArr!="undefined"){
+            infoArr.pixel = pixelArr;
+        } 
+        
+        //fb
+        if(data.flag){
+            $.ajax({url:"/service?name=virtual_event&action=VirtualEvent",type: 'post',data:infoArr,success:function(result){
+                console.log(result);
+            }});
+        }else{
+            $.ajax({url:"/shopapi/v1/pixelEvent/pushEvent",type: 'post',data:infoArr,success:function(result){
+                console.log(result);
+            }});
+        }
+        // return infoArr;
+    }
+    //格式化参数数据
+    var formatFun = function(str){
+        if(!str) return false;
+        var oTipss = str.split("#");
+        var oTipst = {};
+        for(var i = 0 ; i < oTipss.length ; i++){
+            var objOne = oTipss[i].split(":");
+            oTipst[objOne[0]] = objOne[1];
+        }
+        return oTipst;
+    }
+
+    window.App = {
+        "showStar": showStar,
+        "promotion": _promotion,
+        "getCustId": _getCustId,
+        "getCustInfo": _getCustInfo,
+        "getParams": _getParams,
+        "getHref": getHref,
+        "idToUsd":idToUsd,
+        "addCartInfo":addCartInfo,
+        "formatFun":formatFun,
+        "getHref2": getHref2
+    };
+
+})(jQuery);
+
+//彈出層
+function guiShow(box) {
+    if ($(".gui-mask").length < 1) {
+        $(".body-box").append("<div class='gui-mask'></div>");
+    }
+    var top = -1 * $(document).scrollTop();
+    var mLeft = -1 * ($(".body-box").width()) / 2;
+    // $(".body-box").css({ "position": "fixed", "top": top, "left": "50%", "right": 0, "bottom": 0, "margin-left": mLeft });
+    $(box).addClass("anim-up");
+    $(".gui-mask").addClass("gui-show");
+}
+function guiHide(box) {
+    var top = $(".body-box").offset().top;
+    // $(".body-box").css({ "position": "static", "margin-left": "auto", "left": "auto" });
+    $(document).scrollTop(-1 * top);
+    $(box).removeClass("anim-up");
+    $(".gui-mask").removeClass("gui-show");
+}
+// $("html").on("click", ".gui-show", function () {
+//     guiHide(".anim-up");
+// });
+
+//提示框
+function toast(text, time) {
+    if ($(".gui-mask").length < 1) {
+        $(".body-box").append("<div class='gui-mask'></div>");
+    }
+    var time = time ? time : '1000';
+    var str = '<div class="toast">' + text + '</div>';
+    $(".gui-mask").addClass("gui-show");
+    $("body").append(str);
+    var width = -(($(".toast").width() + 16) / 2),
+        height = -(($(".toast").height() + 20) / 2);
+    $(".toast").css({
+        // "margin-left": width + "px",
+        // "margin-top": height + "px",
+        "transfrom": "translateX(-50%)"
+    });
+    setTimeout("$('.toast').remove();$('.gui-mask').removeClass('gui-show');", time);
+}
+
+//对话框
+function Confirm(text, ok, cancal, confirmCb, cancalCb,className) {
+    var gkMask;
+    if ($(".gui-mask").length < 1) {
+        gkMask = $("<div class='gui-mask'></div>");
+    } else {
+        gkMask = $('.gui-mask')
+    }
+    if(className){
+        gkMask.addClass(className);
+    }
+    gkMask.addClass('gui-show');
+    var gkModel = $('<div class="confirm"><div class="confirm-t al-c">' + text + '</div><div class="confirm-btn flex-btw"><span id="confirm-ok">' + ok + '</span><span id="confirm-cancle">' + cancal + '</span></div></div>');
+
+    if(className && className == "page-back"){
+        var pathname = window.location.pathname;
+        var page = "detail";
+        if(pathname.indexOf("/checkout") > -1) page = "checkout";
+        gkModel.find("#confirm-ok").addClass("ga-event").attr({"ga-src": page,"ga-type":"page-ok"});
+        gkModel.find("#confirm-cancle").addClass("ga-event").attr({"ga-src": page,"ga-type":"page-cancle"});
+    }
+    gkMask.append(gkModel);
+    $('.body-box').length ? $($(".body-box")[0]).append(gkMask) : $('body').append(gkMask);
+    var width = -(($(".confirm").width()) / 2),
+        height = -(($(".confirm").height()) / 2);
+    $(".confirm").css({
+        "margin-left": width + "px",
+        "margin-top": height + "px"
+    });
+    gkModel.on('click', "#confirm-ok", function () {
+        $(".confirm").remove();
+        $(".gui-mask").removeClass("gui-show");
+        confirmCb();
+    });
+    gkModel.on('click', "#confirm-cancle", function () {
+        $(".confirm").remove();
+        $(".gui-mask").removeClass("gui-show");
+        cancalCb();
+    });
+}
+
+//获取url的关键词
+function getKey(key) {
+    var keyU = window.location.search;
+    let params, keyW = '';
+    params = new URLSearchParams(keyU.slice(1));
+    keyW = params.get(key);
+    return keyW;
+}
+
+//过滤特殊字符
+function stripscript(s) {
+    //格式 RegExp("[在中间定义特殊过滤字符]")
+    var pattern = new RegExp("[%--`~!@#$^&*()=|{}':;',\\[\\].<>/?~！@#￥……&*（）——|{}【】‘；：”“'。，、？]")
+    var rs = "";
+    for (var i = 0; i < s.length; i++) {
+        rs = rs + s.substr(i, 1).replace(pattern, '');
+    }
+    return rs;
+}
+
+//数字格式化：每三位加特殊符号
+function separation(num) {
+    var numpart = String(num).split(".");
+    numpart[0] = numpart[0].replace(new RegExp('(\\d)(?=(\\d{3})+$)', 'ig'), "$1,");
+    return numpart.join(".");
+}
+
+// 获取gservice接口token
+function getGserviceToken(name, action,time) {
+    var timestamp = new Date().getTime();
+    timestamp = time ? time : parseInt(timestamp / 1000);
+    return md5(name + action + timestamp + 'gmall3_brazil')
+}
+
+
+// 获取详情页链接
+function getDetailUrl (sno, isStatic, collId) {
+    return isStatic ? '/detail/' + Base64.encode(sno) + '.html' : '/index/detail?sno=' + Base64.encode(sno) + '&coll_id=' + collId;
+}
+var publicConfirm = Confirm;
+// md5 加密
+!function(n){"use strict";function d(n,t){var r=(65535&n)+(65535&t);return(n>>16)+(t>>16)+(r>>16)<<16|65535&r}function f(n,t,r,e,o,u){return d((c=d(d(t,n),d(e,u)))<<(f=o)|c>>>32-f,r);var c,f}function l(n,t,r,e,o,u,c){return f(t&r|~t&e,n,t,o,u,c)}function v(n,t,r,e,o,u,c){return f(t&e|r&~e,n,t,o,u,c)}function g(n,t,r,e,o,u,c){return f(t^r^e,n,t,o,u,c)}function m(n,t,r,e,o,u,c){return f(r^(t|~e),n,t,o,u,c)}function i(n,t){var r,e,o,u;n[t>>5]|=128<<t%32,n[14+(t+64>>>9<<4)]=t;for(var c=1732584193,f=-271733879,i=-1732584194,a=271733878,h=0;h<n.length;h+=16)c=l(r=c,e=f,o=i,u=a,n[h],7,-680876936),a=l(a,c,f,i,n[h+1],12,-389564586),i=l(i,a,c,f,n[h+2],17,606105819),f=l(f,i,a,c,n[h+3],22,-1044525330),c=l(c,f,i,a,n[h+4],7,-176418897),a=l(a,c,f,i,n[h+5],12,1200080426),i=l(i,a,c,f,n[h+6],17,-1473231341),f=l(f,i,a,c,n[h+7],22,-45705983),c=l(c,f,i,a,n[h+8],7,1770035416),a=l(a,c,f,i,n[h+9],12,-1958414417),i=l(i,a,c,f,n[h+10],17,-42063),f=l(f,i,a,c,n[h+11],22,-1990404162),c=l(c,f,i,a,n[h+12],7,1804603682),a=l(a,c,f,i,n[h+13],12,-40341101),i=l(i,a,c,f,n[h+14],17,-1502002290),c=v(c,f=l(f,i,a,c,n[h+15],22,1236535329),i,a,n[h+1],5,-165796510),a=v(a,c,f,i,n[h+6],9,-1069501632),i=v(i,a,c,f,n[h+11],14,643717713),f=v(f,i,a,c,n[h],20,-373897302),c=v(c,f,i,a,n[h+5],5,-701558691),a=v(a,c,f,i,n[h+10],9,38016083),i=v(i,a,c,f,n[h+15],14,-660478335),f=v(f,i,a,c,n[h+4],20,-405537848),c=v(c,f,i,a,n[h+9],5,568446438),a=v(a,c,f,i,n[h+14],9,-1019803690),i=v(i,a,c,f,n[h+3],14,-187363961),f=v(f,i,a,c,n[h+8],20,1163531501),c=v(c,f,i,a,n[h+13],5,-1444681467),a=v(a,c,f,i,n[h+2],9,-51403784),i=v(i,a,c,f,n[h+7],14,1735328473),c=g(c,f=v(f,i,a,c,n[h+12],20,-1926607734),i,a,n[h+5],4,-378558),a=g(a,c,f,i,n[h+8],11,-2022574463),i=g(i,a,c,f,n[h+11],16,1839030562),f=g(f,i,a,c,n[h+14],23,-35309556),c=g(c,f,i,a,n[h+1],4,-1530992060),a=g(a,c,f,i,n[h+4],11,1272893353),i=g(i,a,c,f,n[h+7],16,-155497632),f=g(f,i,a,c,n[h+10],23,-1094730640),c=g(c,f,i,a,n[h+13],4,681279174),a=g(a,c,f,i,n[h],11,-358537222),i=g(i,a,c,f,n[h+3],16,-722521979),f=g(f,i,a,c,n[h+6],23,76029189),c=g(c,f,i,a,n[h+9],4,-640364487),a=g(a,c,f,i,n[h+12],11,-421815835),i=g(i,a,c,f,n[h+15],16,530742520),c=m(c,f=g(f,i,a,c,n[h+2],23,-995338651),i,a,n[h],6,-198630844),a=m(a,c,f,i,n[h+7],10,1126891415),i=m(i,a,c,f,n[h+14],15,-1416354905),f=m(f,i,a,c,n[h+5],21,-57434055),c=m(c,f,i,a,n[h+12],6,1700485571),a=m(a,c,f,i,n[h+3],10,-1894986606),i=m(i,a,c,f,n[h+10],15,-1051523),f=m(f,i,a,c,n[h+1],21,-2054922799),c=m(c,f,i,a,n[h+8],6,1873313359),a=m(a,c,f,i,n[h+15],10,-30611744),i=m(i,a,c,f,n[h+6],15,-1560198380),f=m(f,i,a,c,n[h+13],21,1309151649),c=m(c,f,i,a,n[h+4],6,-145523070),a=m(a,c,f,i,n[h+11],10,-1120210379),i=m(i,a,c,f,n[h+2],15,718787259),f=m(f,i,a,c,n[h+9],21,-343485551),c=d(c,r),f=d(f,e),i=d(i,o),a=d(a,u);return[c,f,i,a]}function a(n){for(var t="",r=32*n.length,e=0;e<r;e+=8)t+=String.fromCharCode(n[e>>5]>>>e%32&255);return t}function h(n){var t=[];for(t[(n.length>>2)-1]=void 0,e=0;e<t.length;e+=1)t[e]=0;for(var r=8*n.length,e=0;e<r;e+=8)t[e>>5]|=(255&n.charCodeAt(e/8))<<e%32;return t}function e(n){for(var t,r="0123456789abcdef",e="",o=0;o<n.length;o+=1)t=n.charCodeAt(o),e+=r.charAt(t>>>4&15)+r.charAt(15&t);return e}function r(n){return unescape(encodeURIComponent(n))}function o(n){return a(i(h(t=r(n)),8*t.length));var t}function u(n,t){return function(n,t){var r,e,o=h(n),u=[],c=[];for(u[15]=c[15]=void 0,16<o.length&&(o=i(o,8*n.length)),r=0;r<16;r+=1)u[r]=909522486^o[r],c[r]=1549556828^o[r];return e=i(u.concat(h(t)),512+8*t.length),a(i(c.concat(e),640))}(r(n),r(t))}function t(n,t,r){return t?r?u(t,n):e(u(t,n)):r?o(n):e(o(n))}"function"==typeof define&&define.amd?define(function(){return t}):"object"==typeof module&&module.exports?module.exports=t:n.md5=t}(this);

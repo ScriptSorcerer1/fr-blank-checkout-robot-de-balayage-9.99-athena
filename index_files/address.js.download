@@ -1,0 +1,173 @@
+(function () {
+  renderEamilSuffix(currencyId, marketId);
+
+  // 隐藏表单留言框
+  typeof closeAdsNote !== 'undefined' && Number(closeAdsNote) && $('[name="notes"]').parents('.form-group, .form-address-item, .field').hide();
+  // 邮箱后缀
+  function getEmailSuffix(curId, marId) {
+    let defaultEmailSuffix = ['@gmail.com', '@yahoo.com', '@hotmail.com', '@icloud.com'];
+    let addressEmailSuffix = [
+      {
+        curId: 9,
+        marketId: 7,
+        value: ['@gmail.com', '@ezweb.ne.jp', '@docomo.ne.jp', '@au.com', '@icloud.com']
+      }, //日币
+      {
+        curId: 10,
+        marketId: 8,
+        value: ['@gmail.com', '@naver.com', '@hanmail.net', '@hotmail.com', '@yahoo.com']
+      }, //韩币
+      {
+        curId: 4,
+        marketId: 44,
+        value: ['@gmail.com', '@gmx.de', '@web.de', '@yahoo.com']
+      }, //德国
+      {
+        curId: 29,
+        marketId: 28,
+        value: ['@gmail.com', '@yahoo.com', '@onet.pl', '@wp.pl', '@interia.pl']
+      } // 兹罗提-波兰
+    ];
+    let curEmailSuffix = addressEmailSuffix.find(
+      v => v.curId == Number(curId) && v.marketId == Number(marId)
+    );
+    return curEmailSuffix ? curEmailSuffix.value : defaultEmailSuffix;
+  }
+
+  // 用户输入邮箱 @后方的联动
+  function renderEamilSuffix(curId, marId) {
+    let emailSuffix = getEmailSuffix(curId, marId);
+    $('body').on('input keyup', 'input[name="email"]', function () {
+      let email = $(this).val();
+      let addEmailSuffix;
+
+      if ($('.add-email-suffix').length) {
+        addEmailSuffix = $('.add-email-suffix');
+      } else {
+        addEmailSuffix = $(`<ul class="add-email-suffix"/>`);
+        if ($(this).parents('.field').length) {
+          addEmailSuffix.addClass('tempalte-project');
+        }
+        $(this).after(addEmailSuffix);
+      }
+
+      if (!email) {
+        addEmailSuffix.hide().html('');
+        return;
+      }
+
+      let emailPrefix = email.includes('＠') ? email.split('＠')[0] : email.split('@')[0];
+      var hasEmailSuffix = email.split('@')[1]
+        ? emailSuffix.filter(v => ('@' + v).includes('@' + email.split('@')[1]))
+        : emailSuffix;
+      if (!hasEmailSuffix.length) {
+        addEmailSuffix.hide();
+        return;
+      }
+      $(this).parents('.form-group').length &&
+        $(this).parents('.form-group').css('position', 'relative');
+      $(this).parents('.field').length && $(this).parents('.field').css('position', 'relative');
+      let str = '';
+      hasEmailSuffix.map(v => {
+        let value = emailPrefix + v;
+        str += `<li class="email-item">${value}</li>`;
+      });
+      addEmailSuffix.html(str);
+      addEmailSuffix.show();
+    });
+    $('body').on('click', '.add-email-suffix .email-item', function () {
+      $(this).parents('.form-group').length &&
+        $(this)
+          .parents('.form-group')
+          .find('input[name="email"]')
+          .val($(this).html())
+          .trigger('blur')
+          .trigger('change');
+      $(this).parents('.field').length &&
+        $(this)
+          .parents('.field')
+          .find('input[name="email"]')
+          .val($(this).html())
+          .trigger('blur')
+          .trigger('change');
+      $('.add-email-suffix').hide();
+    });
+
+    $('body').on('click', function (e) {
+      if (!$(e.target).is('.add-email-suffix, .email-item,input[name="email"]')) {
+        $('.add-email-suffix').hide();
+      }
+    });
+    $('body').on('focus', 'input[name="email"]', function () {
+      if ($(this).val()) {
+        $('.add-email-suffix').show();
+      }
+    });
+    var emailBlur = false;
+    $('body').on('blur', 'input[name="email"]', function () {
+      if (emailBlur) {
+        emailBlur = false;
+        return;
+      }
+      emailBlur = true;
+      let email = $(this).val().replace('＠', '@');
+      $(this).val(email).trigger('change');
+    });
+  }
+
+  // 相邻国家电话校验
+  function adjacentCountryPhone(val, curId) {
+    var flag = false;
+    curId = Number(curId);
+    /**
+     * 变量名：当前站点币种id
+     * 对应的值：允许填写电话对应的国家代码
+     * */
+    var phoneLists = {
+      12: 'SG'
+    };
+    var curPhone = phoneLists[curId];
+    if (curPhone) {
+      flag = checkPhone(val, curPhone);
+    }
+    return flag;
+  }
+
+  // 验证电话
+  function checkPhone(val, countryCode) {
+    var flag = false;
+    var phoneNumber = new libphonenumber.parsePhoneNumberFromString(val, countryCode);
+    if (phoneNumber.country == countryCode) {
+      // 判断手机号是否有效
+      if (phoneNumber.isValid()) {
+        flag = true;
+        $('.correct-phont-hint').show();
+      }
+    }
+    return flag;
+  }
+
+  var isCorrectCharacter = [
+    'NO email',
+    'NIL',
+    'NO',
+    'NILL',
+    'N/A',
+    'NA',
+    'NONE',
+    'Brak',
+    'NIE',
+    'Nie mam',
+    'Nie posiadam',
+    'Nu am',
+    'NU',
+    'NAM',
+    'Nincs',
+    'Nics'
+  ];
+
+  window.addressFn = {
+    adjacentCountryPhone,
+    isCorrectCharacter
+  };
+})();
