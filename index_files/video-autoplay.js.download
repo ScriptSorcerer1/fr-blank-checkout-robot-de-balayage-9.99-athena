@@ -1,0 +1,39 @@
+function videoAutoplay(selector) {
+  $(selector).each(function (i, video) {
+    var poster = $(video).attr('poster');
+    var flag = false;
+    if (poster) {
+      var link = poster.split('?')[0];
+      var lastPath = link.split('/').pop();
+      var extName = lastPath.split('.')[1];
+      if (extName) {
+        flag = true;
+      }
+    }
+    if (flag) {
+      return;
+    }
+    $(video)
+      .attr('autoplay', 'autoplay')
+      .attr('controls', false)
+      .attr('playsinline', true)
+      .attr('webkit-playsinline', true)
+      .attr('x-webkit-airplay', true)
+      .attr('x5-video-player-type', 'h5')
+      .attr('x5-video-orientation', 'portraint')
+      .attr('preload', true)
+      .attr('muted', true)
+      .attr('loop', true)
+      .css({
+        width: '100%',
+        'pointer-events': 'none',
+      });
+    video.muted = true;
+    video.loop = true;
+    video.load();
+    video.play();
+    if ($(video).siblings('.detail-video-btn').length) {
+      $(video).siblings('.detail-video-btn').hide();
+    }
+  });
+}

@@ -1,0 +1,36 @@
+.send-note {
+    width: 100%;
+    display: none;
+    padding: 10px;
+    font-size: 14px;
+}
+
+.send-note .check {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    vertical-align: middle;
+    margin: 0 5px;
+    border: 2px solid #f84336;
+    padding: 0 1px;
+    border-radius: 3px;
+    cursor: pointer;
+    outline: none;
+    background-color: #fff;
+}
+
+.send-note .check svg {
+    display: block;
+    width: 10px;
+    height: 10px;
+}
+
+.send-check .check {
+    background-color: #f84336;
+    cursor: not-allowed;
+}
+.AR-rtl {
+    direction: rtl;
+    text-align: right;
+    text-align: -webkit-auto;
+}

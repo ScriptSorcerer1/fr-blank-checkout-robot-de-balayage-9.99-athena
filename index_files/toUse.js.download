@@ -1,0 +1,152 @@
+function formatNum(str) {
+    var str = str + "";
+    var newStr = "";
+    var count = 0;
+    if (str.indexOf(".") == -1) {
+        for (var i = str.length - 1; i >= 0; i--) {
+            if (count % 3 == 0 && count != 0) {
+                newStr = str.charAt(i) + "," + newStr;
+            } else {
+                newStr = str.charAt(i) + newStr;
+            }
+            count++;
+        }
+        str = newStr + ".00"; //自动补小数点后两位
+    } else {
+        for (var i = str.indexOf(".") - 1; i >= 0; i--) {
+            if (count % 3 == 0 && count != 0) {
+                newStr = str.charAt(i) + "," + newStr;
+            } else {
+                newStr = str.charAt(i) + newStr; //逐个字符相接起来
+            }
+            count++;
+        }
+        str = newStr + (str + "00").substr((str + "00").indexOf("."), 3);
+    }
+    return str;
+}
+//转换美元
+function idToUsd(currencyId, price, noFormat = false) {
+    switch (currencyId) {
+        case "19"://越南盾
+            final = price / 23239;
+            break;
+        case "9"://日币
+            final = price / 136;
+            break;
+        case "6"://港币
+            final = price / 7.8;
+            break;
+        case "1"://迪拉姆
+            final = price / 3.6;
+            break;
+        case "14"://沙特币
+            final = price / 3.7;
+            break;
+        case '12'://马来西亚币
+            final = price / 4.4;
+            break;
+        case "15"://新加坡币
+            final = price / 1.4;
+            break;
+        case "16"://泰铢
+            final = price * 0.0282;
+            break;
+        case "13"://台币
+            final = price / 29;
+            break;
+        case "10"://韩元
+            final = price * 0.0007;
+            break;
+        case '20'://菲律宾
+            final = price * 0.0183;
+            break;
+        case '44'://伊拉克第纳尔
+            final = price / 1309.61;
+            break;
+        case '11'://澳门元==》澳门帕塔卡
+            final = price / 8.074;
+            break;
+        case '15'://新加坡
+            final = price / 1.348;
+            break;
+        case '17'://土耳其里拉==》土耳其新里拉
+            final = price / 22.859;
+            break;
+        case '21'://印度尼西亚卢比==》印尼盾
+            final = price / 14873;
+            break;
+        case '22'://巴西雷尔亚==》巴西雷阿尔
+            final = price / 4.913;
+            break;
+        case '24'://阿根廷比索
+            final = price / 243.2;
+            break;
+        case '25'://科威特第纳尔
+            final = price / 0.307;
+            break;
+        case '26'://墨西哥比索
+            final = price / 17.384;
+            break;
+        case '27'://哥伦比亚比索
+            final = price / 4290.61;
+            break;
+        case '29'://兹罗提
+            final = price / 4.191;
+            break;
+        case '32'://摩洛哥迪拉姆
+            final = price / 10.188;
+            break;
+        case '33'://加拿大元
+            final = price / 1.34;
+            break;
+        case '34'://阿曼里亚尔
+            final = price / 0.385;
+            break;
+        case '35'://约旦第纳尔
+            final = price / 0.709;
+            break;
+        case '36'://匈牙利福林
+            final = price / 344.89;
+            break;
+        case '37'://罗马尼亚列伊 ==》罗马尼亚新列伊
+            final = price / 4.644;
+            break;
+        case '38'://巴林第纳尔
+            final = price / 0.377;
+            break;
+        case '39'://黎巴嫩镑
+            final = price / 15;
+            break;
+        case '40'://卡塔尔里亚尔
+            final = price / 3.641;
+            break;
+        case '42'://俄罗斯卢布
+            final = price / 81.398;
+            break;
+        case '43'://尼日利亚奈拉
+            final = price / 465.38;
+            break;
+        default:
+            final = price;
+    }
+    return noFormat ? parseInt(final * 100) / 100 : formatNum(final);
+}
+function formatTime(date, tag) {
+    if (!date) {
+        date = new Date();
+    }
+    var year = date.getFullYear() // 获取年
+    var month = date.getMonth() + 1 // 获取月
+    var strDate = date.getDate() // 获取日
+    // var day = date.getDate() //
+    var day = '日一二三四五六'.charAt(new Date().getDay()) // 周一返回的是1，周六是6，但是周日是0
+    var hour = date.getHours() // 获取小时
+    var minute = date.getMinutes() // 获取分钟
+    var second = date.getSeconds() // 获取秒
+    if (tag) {
+        return year + "-" + month + "-" + strDate + " " + hour + ":" + minute + ":" + second;
+    } else {
+        return year + "-" + month + "-" + strDate;
+    }
+}

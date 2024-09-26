@@ -1,0 +1,100 @@
+function GkPush() {
+  var swRegistration = null;
+  var applicationServerPublicKey =
+    'BF9qVs8cKNYwx8yel3h4Yu3LJMVJqYeDPNJaAhJs8L2rG-OWwUR-3WXUUIyPa8JX-VbodhHi1e_bvAD6W4HyaW8';
+
+  this.isSupported = function () {
+    console.log('serviceWorker', 'serviceWorker' in navigator);
+    console.log('PushManager', 'PushManager' in window);
+    return 'serviceWorker' in navigator && 'PushManager' in window;
+  };
+
+  this.urlB64ToUint8Array = function (base64String) {
+    var padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+    var base64 = (base64String + padding)
+      .replace(/\-/g, '+')
+      .replace(/_/g, '/');
+
+    var rawData = window.atob(base64);
+    var outputArray = new Uint8Array(rawData.length);
+
+    for (let i = 0; i < rawData.length; ++i) {
+      outputArray[i] = rawData.charCodeAt(i);
+    }
+    return outputArray;
+  };
+
+  this.init = function () {
+    if (!this.isSupported()) {
+      return;
+    }
+    navigator.serviceWorker
+      .register('/V3/common/assets/js/service-work.js')
+      .then(function (swReg) {
+        swRegistration = swReg;
+      })
+      .catch(function (error) {
+        console.error('Service Worker Error', error);
+      });
+  };
+
+  this.isSubscribed = function () {
+    return new Promise(function (resolve, reject) {
+      if (swRegistration) {
+        swRegistration.pushManager
+          .getSubscription()
+          .then(function (subscription) {
+            resolve(!!subscription);
+          })
+          .catch(function (error) {
+            reject(error);
+          });
+      } else {
+        reject(new Error('Service Worker Registration is not available'));
+      }
+    });
+  };
+
+  this.subscribe = function (options) {
+    var applicationServerKey = this.urlB64ToUint8Array(
+      applicationServerPublicKey,
+    );
+    return new Promise(async function (resolve, reject) {
+      if (Notification.permission !== 'granted') {
+        await Notification.requestPermission();
+      }
+
+      if (Notification.permission !== 'granted') {
+        reject(new Error('User denied notification permission'));
+        return;
+      }
+
+      if (!swRegistration) {
+        reject(new Error('Service Worker Registration is not available'));
+        return;
+      }
+      swRegistration.pushManager
+        .subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: applicationServerKey,
+        })
+        .then(function (subscription) {
+          request('isShopapi', '/shopapi/v1/webPush/addSubscript', {
+            subscription: JSON.stringify(subscription),
+            options: JSON.stringify(options || {}),
+          })
+            .then(function (response) {
+              resolve(response);
+            })
+            .catch(function (err) {
+              reject(err);
+            });
+        })
+        .catch(function (err) {
+          console.log('Failed to subscribe the user: ', err);
+          reject(err);
+        });
+    });
+  };
+  this.init();
+}
