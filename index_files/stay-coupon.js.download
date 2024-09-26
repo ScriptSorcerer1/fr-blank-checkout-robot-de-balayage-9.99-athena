@@ -1,0 +1,111 @@
+var couponPkid = store.get('_coupon_pkid');
+var pkids = [];
+var valideCoupon = [];
+var popupTime = null;
+if (stayCouponData.length > 0) {
+  stayCouponData = stayCouponData.filter(item => item.status == 1);
+  if (couponPkid && couponPkid.saleId == sinfo.id) {
+    stayCouponData = stayCouponData.filter(item => !couponPkid.pkids.includes(item.pkid));
+  }
+  // console.log('stayCouponData=', stayCouponData);
+  valideCoupon = stayCouponData.filter(
+    item =>
+      sinfo &&
+      sinfo.finalPrice >= parseInt(item.min_price) &&
+      sinfo.finalPrice <= parseInt(item.max_price)
+  );
+
+  if (valideCoupon.length > 0) {
+    var index = 0;
+    setTimeout(function () {
+      runTimers();
+    }, valideCoupon[index].popup_second * 1000);
+  }
+}
+
+function runTimers() {
+  $('.stay-coupon').addClass('show-pop');
+  $('.stay-coupon .reduce-value').html(
+    couponLang.reduceValue.replace('$X', parseInt(valideCoupon[index].value))
+  );
+  showCountDown($('.stay-countdown'));
+  popupTime = valideCoupon[index].popup_second;
+  index++;
+  if (index < valideCoupon.length) {
+    setTimeout(runTimers, valideCoupon[index].popup_second * 1000);
+  }
+
+  setTimeout(function () {
+    $('.stay-coupon').removeClass('show-pop');
+  }, 10000);
+}
+
+//显示优惠券上边的倒计时
+function showCountDown(name) {
+  var now = new Date().getTime() + 30 * 60 * 1000; // 30分钟过期
+  var date = formatTimeStamp(now);
+  var countLang = {
+    lang: {
+      day: '',
+      hour: '',
+      minute: '',
+      second: '',
+      separator: ':'
+    }
+  };
+  name.countDown(date, countLang);
+}
+
+//时间戳格式化
+function formatTimeStamp(timestamp) {
+  var date = new Date(timestamp);
+  var year = date.getFullYear();
+  var month = String(date.getMonth() + 1).padStart(2, '0');
+  var day = String(date.getDate()).padStart(2, '0');
+  var hours = String(date.getHours()).padStart(2, '0');
+  var minutes = String(date.getMinutes()).padStart(2, '0');
+  var seconds = String(date.getSeconds()).padStart(2, '0');
+  return `${year}/${month}/${day} ${hours}:${minutes}:${seconds}`;
+}
+
+//点击领取
+$('.stay-coupon .button-item .btn').on('click', function () {
+  var params = {
+    currencyId: currencyId,
+    uid: $.uid(),
+    saleId: sinfo && sinfo.id,
+    price: sinfo && sinfo.finalPrice,
+    popupSecond: popupTime
+  };
+  addCoupon(params)
+    .then(res => {
+      // console.log(res);
+      if (res.length == 0) {
+        toast(couponLang.cannotReapeat);
+        $('.stay-coupon').removeClass('show-pop');
+        return;
+      }
+      if (couponLang.gotIt) {
+        stayCouponRightHint();
+        toast(
+          `<i class="iconfont iconwancheng-copy" style="margin: 10px auto 15px; display: block; font-size: 50px;"/><p>${couponLang.gotIt}</p>`
+        );
+      }
+      $('.stay-coupon').removeClass('show-pop');
+      pkids.push(res.coupon_pkid);
+      store.set('_coupon_pkid', { saleId: sinfo.id, pkids: pkids });
+    })
+    .catch(err => {
+      console.log(err);
+    });
+});
+function stayCouponRightHint() {
+  let hint = $(`<div class="stay-countdown-right"/>`);
+  let time = $('<div class="countdown-right"/>');
+  hint.append(`<i class="iconfont iconjijifuli"/>`).append(time);
+  showCountDown(time);
+  setTimeout(function(){
+    hint.remove()
+  }, 1000 * 60 * 30)
+  $('body').append(hint);
+}

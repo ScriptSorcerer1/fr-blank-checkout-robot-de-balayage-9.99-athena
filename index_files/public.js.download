@@ -1,0 +1,502 @@
+function addProductLogo(val, pos, logo) {
+  if (!val.length || !logo) return;
+  val.each(function (v) {
+    var img = '<img data-original="' + logo + '" src="' + logo + '" class="lazy product-logo">';
+    if ($(this).find(pos).length) {
+      $(this).find(pos).css({ position: 'relative', 'z-index': '1' });
+      $(this).find(pos).append(img);
+    }
+  });
+}
+function multiCurrency(curId, curSymbolPos, curSymbol, currencyTo, cartProm, isMultiCurrency) {
+  var remark = {
+    fromCurrencyId: curId,
+    toCurrencyId: curId,
+    curSymbolPos: curSymbolPos,
+    symbol: curSymbol
+  };
+  
+  if(!isMultiCurrency){
+    return remark;
+  }
+  require(['currencyNew'], function ({ winCurrency }) {
+    var currencyFrom = store.get('_gk_currencyFrom');
+    if (currencyFrom != null) {
+      remark.fromCurrencyId = currencyFrom;
+    }
+    if (currencyTo != null) {
+      remark.toCurrencyId = currencyTo;
+    }
+    if ('undefined' != typeof cartProm) {
+      cartProm = winCurrency.cartPromFun({
+        data: JSON.parse(JSON.stringify(cartProm)),
+        remark: remark,
+        lang: cartLang['addcart_prom_desc']
+      });
+    }
+    var href = location.href;
+    if (href.indexOf('detail') > -1) {
+      var sinfo = store.get('sinfo');
+      if ('undefined' != typeof sinfo) {
+        sinfo = JSON.parse(sinfo);
+        sinfo.currencyId = remark.toCurrencyId;
+        sinfo = winCurrency.sinfoFun({
+          data: sinfo,
+          remark: remark,
+          lang: cartLang['addcart_prom_desc']
+        });
+      }
+    }
+  });
+  return remark;
+}
+function publicFormatPrice(price) {
+  var str = price + '';
+  var newStr = '';
+  var count = 0;
+  for (var i = str.length - 1; i >= 0; i--) {
+    if (count % 3 == 0 && count != 0) {
+      newStr = str.charAt(i) + ',' + newStr;
+    } else {
+      newStr = str.charAt(i) + newStr;
+    }
+    count++;
+  }
+  return newStr;
+}
+function publiceFormatCurrency(money, curSymbol) {
+  if (!money) {
+    return money;
+  }
+  curSymbol = curSymbol || symbol;
+  // 保留两位小数的币种符号
+  var symbolKeepTwoDecimals = ['$'];
+  money = money.toString().replace(/\$|\,/g, '');
+
+  if (isNaN(money)) {
+    money = '0';
+  }
+  if (symbolKeepTwoDecimals.includes(curSymbol)) {
+    money = String(Number(money).toFixed(2));
+  } else {
+    money = Math.floor(money * 10 + 0.50000000001);
+    money = Math.floor(money / 10).toString();
+  }
+
+  if (curSymbol == 'zł') {
+    for (var i = 0; i < Math.floor((money.length - (1 + i)) / 3); i++) {
+      money =
+        money.substring(0, money.length - (4 * i + 3)) +
+        ' ' +
+        money.substring(money.length - (4 * i + 3));
+    }
+    money = money + `<small>,00</small>`;
+  } else if (curSymbol == 'Ft') {
+    for (var i = 0; i < Math.floor((money.length - (1 + i)) / 3); i++) {
+      money =
+        money.substring(0, money.length - (4 * i + 3)) +
+        ' ' +
+        money.substring(money.length - (4 * i + 3));
+    }
+  } else if (symbolKeepTwoDecimals.includes(curSymbol)) {
+    var moneyFixed = money.split('.');
+    money = moneyFixed[0];
+    for (var i = 0; i < Math.floor((money.length - (1 + i)) / 3); i++) {
+      money =
+        money.substring(0, money.length - (4 * i + 3)) +
+        ' ' +
+        money.substring(money.length - (4 * i + 3));
+    }
+    money = money + '.' + moneyFixed[1];
+  } else {
+    for (var i = 0; i < Math.floor((money.length - (1 + i)) / 3); i++) {
+      money =
+        money.substring(0, money.length - (4 * i + 3)) +
+        ',' +
+        money.substring(money.length - (4 * i + 3));
+    }
+  }
+  return money;
+}
+$.fn.priceFormatCurrency = function () {
+  switch (currencyId) {
+    case '18':
+      this.each(function () {
+        var price = $(this).text();
+        if (price.length > 0) {
+          price = Number(price.trim().replace(/[^\d.]/g, '')).toFixed(2);
+          currencyPos
+            ? $(this).html(symbol + separationSpace(price))
+            : $(this).html(separationSpace(price) + symbol);
+        }
+      });
+      break;
+    case '29':
+      // 波兰
+      this.each(function () {
+        let price = $(this).text();
+        if (price.length > 0 && price.indexOf(',00') == -1) {
+          if (price.indexOf(',') > -1) {
+            price = price.trim().replace(/,/g, '');
+          }
+          if (price.indexOf('.00') > -1) {
+            price = price.trim().replace(/\.00/g, '');
+          }
+          price = parseInt(price.trim().replace(/\D/g, ''));
+          $(this).html(separationSpace(price) + `<small>,00   ${symbol}</small>`);
+        }
+      });
+      break;
+    case '36':
+      // 匈牙利
+      this.each(function () {
+        let price = $(this).text();
+        if (price.length > 0 && price.indexOf(',00') == -1) {
+          if (price.indexOf(',') > -1) {
+            price = price.trim().replace(/,/g, '');
+          }
+          if (price.indexOf('.00') > -1) {
+            price = price.trim().replace(/\.00/g, '');
+          }
+          price = parseInt(price.trim().replace(/\D/g, ''));
+          $(this).html(separationSpace(price) + `<small>${symbol}</small>`);
+        }
+      });
+      break;
+  }
+};
+
+function separationSpace(num) {
+  //字符串每三位加空格
+  var numpart = String(num).split('.');
+  numpart[0] = numpart[0].replace(new RegExp('(\\d)(?=(\\d{3})+$)', 'ig'), '$1 ');
+  return numpart.join('.');
+}
+
+function backHint(cb, pushHistory = 0) {
+  var pathname = window.location.pathname;
+  if (typeof publicConfirm != 'undefined') {
+    var hint = pageBackHint;
+    var confirm = backContinueBuy;
+    if (pageBackCoupon) {
+      confirm = confirmOk;
+      var price = currencyPos
+        ? symbol + publiceFormatCurrency(pageBackCoupon, symbol)
+        : publiceFormatCurrency(pageBackCoupon, symbol) + symbol;
+      hint = pageBackHintCoupon.replace('$P', "<span class='red'>" + price + '</span>');
+    }
+    initConfirm(
+      hint,
+      confirm,
+      cancal,
+      cancelBack,
+      function () {
+        confirmBack(cb);
+      },
+      'page-back'
+    );
+  } else {
+    cb();
+  }
+
+  function confirmBack(cb) {
+    window.removeEventListener('popstate', function () {
+      backHint(function () {
+        history.go(-1);
+      }, 1);
+    });
+    cb();
+    store.set('active_page_back', 2);
+  }
+  function cancelBack() {
+    if (typeof pageBackCoupon != 'undefined' && pageBackCoupon) {
+      if (pathname.indexOf('/detail') > -1) {
+        store.set('is_back_coupon', pageBackCoupon);
+      }
+      if (pathname.indexOf('/checkout') > -1) {
+        window.Account.backCoupon(pageBackCoupon);
+      }
+    }
+    store.set('active_page_back', 1);
+    if (pushHistory) {
+      window.history.pushState(
+        {
+          title: 'title',
+          url: ''
+        },
+        null,
+        location.href
+      );
+    }
+  }
+}
+function initConfirm(text, ok, cancal, confirmCb, cancalCb, className, cancelSmall) {
+  var gkMask;
+  if ($('.new-mask').length < 1) {
+    gkMask = $("<div class='new-mask'></div>");
+  } else {
+    gkMask = $('.new-mask');
+  }
+
+  if (className) {
+    gkMask.addClass(className);
+  }
+
+  gkMask.addClass('gui-show');
+  var gkModel = $(
+    '<div class="confirm"><div class="confirm-t al-c">' +
+      text +
+      '</div><div class="confirm-btn flex-btw"><span id="confirm-ok">' +
+      ok +
+      '</span><span id="confirm-cancle">' +
+      cancal +
+      '</span></div>' + (cancelSmall ? '<div class="cancel-small">' + cancelSmall  + '</div>' :'') + '</div>'
+  );
+ 
+  if (className && className == 'page-back') {
+    var pathname = window.location.pathname;
+    var page = 'detail';
+    if (pathname.indexOf('/checkout') > -1) page = 'checkout';
+    gkModel.find('#confirm-ok').addClass('ga-event').attr({ 'ga-src': page, 'ga-type': 'page-ok' });
+    gkModel
+      .find('#confirm-cancle')
+      .addClass('ga-event')
+      .attr({ 'ga-src': page, 'ga-type': 'page-cancle' });
+  }
+
+  gkMask.html(gkModel);
+  var bgMask = $('<div class="bg-mask"></div>');
+  gkMask.append(bgMask);
+  $('.body-box').length ? $('.body-box').eq(0).append(gkMask) : $('body').append(gkMask);
+  var width = -($('.confirm').width() / 2),
+    height = -($('.confirm').height() / 2);
+  $('.confirm').css({
+    'margin-left': width + 'px',
+    'margin-top': height + 'px'
+  });
+  gkModel.on('click', '#confirm-ok', function () {
+    $('.new-mask').removeClass('gui-show');
+    confirmCb();
+    setTimeout(function () {
+      $('.new-mask').removeClass(className);
+    }, 300);
+  });
+  gkModel.on('click', '#confirm-cancle, .cancel-small, .bg-mask', function () {
+    $('.new-mask').removeClass('gui-show');
+    cancalCb();
+    setTimeout(function () {
+      $('.new-mask').removeClass(className);
+    }, 300);
+  });
+  bgMask.on('click', function () {
+    $('.new-mask').removeClass('gui-show');
+    cancalCb();
+    setTimeout(function () {
+      $('.new-mask').removeClass(className);
+    }, 300);
+  });
+}
+function isDetailPage() {
+  var pathname = window.location.pathname;
+  return pathname.indexOf('/detail') > -1;
+}
+function isCheckoutPage() {
+  var pathname = window.location.pathname;
+  var path = [
+    '/checkout/orderSuccess',
+    '/checkout/paysuccess',
+    '/checkout/orderFail',
+    '/checkout/fail',
+    '/checkout/loading'
+  ];
+  var flag = path.indexOf(pathname) > -1;
+  if (pathname.indexOf('/checkout') > -1 && !flag) {
+    return true;
+  } else {
+    return false;
+  }
+}
+function historyBack() {
+  try {
+    if (isDetailPage()) {
+      store.remove('is_back_coupon');
+    }
+    if (!isCheckoutPage()) return;
+    if (typeof pageBack != 'undefined' && pageBack / 1) {
+      // var isUpdate = location.href.slice(-1) == "#";
+      if (window.performance.navigation.type != 1) {
+        // 0 : 页面首次加载
+        // 1 : 页面被刷新
+        // 2 : 页面是通过其他页面返回的
+        window.history.pushState(
+          {
+            title: 'title',
+            url: ''
+          },
+          null,
+          location.href
+        );
+      }
+
+      console.log(window.performance.navigation.type);
+      window.addEventListener('popstate', function () {
+        backHint(function () {
+          history.go(-1);
+        }, 1);
+      });
+    }
+  } catch (err) {
+    console.log(err);
+  }
+}
+// 在线支付成功页
+function onlinePaySucess() {
+  var pathname = window.location.pathname;
+  var flag = store.get('pay_loading');
+  if (pathname.indexOf('/checkout/paysuccess') > -1) {
+    if (flag) {
+      toast(loadingPayHint, 2000);
+      store.remove('pay_loading');
+    }
+    if (typeof amountTaxExclusive != 'undefined' && typeof langId != 'undefined' && langId == 3) {
+      $('.amount-hint').html(amountTaxExclusive);
+    }
+    return true;
+  } else {
+    return false;
+  }
+}
+// 货到付款支付成功页
+function orderSucessPage() {
+  var pathname = window.location.pathname;
+  if (pathname.indexOf('/checkout/orderSuccess') > -1) {
+    if (typeof amountTaxInclusive != 'undefined' && typeof langId != 'undefined' && langId == 3) {
+      $('.amount-hint').html(amountTaxInclusive);
+    }
+    return true;
+  } else {
+    return false;
+  }
+}
+
+$(document).ready(function () {
+  onlinePaySucess();
+  orderSucessPage();
+
+  // 当前页面是详情页，不是结账页使用php缓存跳转到详情页的，删除本地存储数据useTplData
+  if (location.href.includes('/index/detail') && (!document.referrer || !document.referrer.includes('/checkout?'))) {
+    store.remove('useTplData');
+  }
+});
+
+// 生成二维码
+function createQrCode(codeText, cb) {
+  var gkMask;
+  if ($('.new-mask').length < 1) {
+    gkMask = $('<div class="new-mask"></div>');
+    $('body').append(gkMask);
+  } else {
+    gkMask = $('.new-mask');
+  }
+  gkMask.addClass('gui-show');
+  var gkModel = $('<div class="qr-code"></div>');
+  var gkQr = $('<div id="QRCodeNone"></div>');
+
+  gkMask.html(gkQr);
+  gkMask.append(gkModel);
+
+  gkQr.qrcode({
+    text: codeText,
+    width: '200', // 二维码的宽度
+    height: '200'
+  });
+
+  // 二维码长按识别
+  var myCanvas = document.querySelector('#QRCodeNone canvas');
+  var img = new Image();
+  img.src = myCanvas.toDataURL('image/png');
+  gkModel.append(img);
+  $('#QRCodeNone').hide();
+  if (typeof qrcodeHint != 'undefined') {
+    gkModel.append(`<p class="hint">${qrcodeHint}</p>`);
+  }
+  if (typeof updateHint != 'undefined') {
+    gkModel.append(`<p class="hint qr-update" style="cursor: pointer;">${updateHint}</p>`);
+  }
+  $('.qr-update').on('click', function () {
+    createQrCode(codeText, cb);
+  });
+  cb();
+}
+
+// 图片添加尺寸
+function addImgSize(url, width, height) {
+  if (url.indexOf('static.compgoo.com') < 0) {
+    return url
+  };
+  var path = url.split('?')[0];
+  var arr = path.split('.');
+  var suffix = '.' + arr[arr.length - 1];
+  var suffixArr = ['.png', '.jpg', '.jpeg'];
+  if (suffixArr.indexOf(suffix) < 0) {
+    return url;
+  }
+  var newWidth = width > 100 ? width : 100;
+  var newHeight = height > 100 ? height : 100;
+  var sizeStr = '.' + newWidth + 'x' + newHeight + suffix;
+  return url.replace(suffix, sizeStr);
+}
+
+// 格式化日期
+function formatDate(date) {
+  date = new Date(date);
+  var year = date.getFullYear();
+  var month = date.getMonth() + 1;
+  var day = date.getDate();
+  month = month < 10 ? "0" + month : month;
+  day = day < 10 ? "0" + day : day;
+  return `${year}-${month}-${day}`;
+}
+
+// 东八区指定时间换算时区
+function formatTimeZone(time){
+  if (!time) return '';
+  const actualTime = new Date(time * 1000);
+  const year = actualTime.getFullYear();
+  const month = actualTime.getMonth() + 1 > 9 ? actualTime.getMonth() + 1 : `0${actualTime.getMonth() + 1}`;
+  const day = actualTime.getDate() > 9 ? actualTime.getDate() : `0${actualTime.getDate()}`;
+  const hour = actualTime.getHours() > 9 ? actualTime.getHours() : `0${actualTime.getHours()}`;
+  const minute = actualTime.getMinutes() > 9 ? actualTime.getMinutes() : `0${actualTime.getMinutes()}`;
+  const second = actualTime.getSeconds() > 9 ? actualTime.getSeconds() : `0${actualTime.getSeconds()}`;
+  return `${year}-${month}-${day} ${hour}:${minute}:${second}`;
+};
+
+// 提取字符串中不包含JSON的内容
+function extractNonJsonString(inputStr) {
+  let jsonStart = inputStr.indexOf('{');
+  let jsonEnd = inputStr.lastIndexOf('}') + 1;
+  let result = '';
+  let nonJsonStringFront = inputStr.substring(0, jsonStart);
+  let nonJsonStringBehind = inputStr.substring(jsonEnd);
+  if (jsonStart === -1 && jsonEnd === 0) {
+      return '未检测到json字符串' + inputStr;
+  }
+  result = nonJsonStringFront && ('JSON前字符：' + nonJsonStringFront.trim()) || '';
+  result += nonJsonStringBehind && ((result ? ', ' : '') + 'JSON后字符：' + nonJsonStringBehind.trim()) || '';
+  return result;
+}
+
+templateCache = true;
+
+// 防抖
+function debounce(fn, delay) {
+  let timer = null;
+  return function () {
+      let that = this;
+      let args = arguments;
+      clearTimeout(timer);
+      timer = setTimeout(function () {
+          fn.apply(that, args)
+      }, delay)
+  }
+}

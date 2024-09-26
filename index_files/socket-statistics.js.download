@@ -1,0 +1,594 @@
+(function () {
+  var prePageId = localStorage.getItem('pre_page_id') || '';
+  if (prePageId) {
+    localStorage.removeItem('pre_page_id');
+  }
+  var pageId = getRandomId() + S4();
+  localStorage.setItem('pre_page_id', pageId);
+
+  // 获取cookie
+  function getCookie(name) {
+    const cookies = document.cookie.split(';');
+    for (let i = 0; i < cookies.length; i++) {
+      const cookie = cookies[i].trim();
+      if (cookie.startsWith(name + '=')) {
+        return decodeURIComponent(cookie.substring((name + '=').length));
+      }
+    }
+    return '';
+  }
+
+  // 删除cookie
+  function deleteCookie(name) {
+    document.cookie = name + '=;expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+  }
+
+  function getSno() {
+    var sno = decodeURIComponent(location.href).split('sno=')[1];
+    // return sno ? window.atob(sno.split('&')[0]) : null;
+    if (!sno) return null;
+    sno = sno.split('&')[0];
+    sno = sno.split('#')[0];
+    try {
+      sno = window.atob(sno);
+    } catch (e) {
+      //TODO handle the exception
+    }
+    return sno || null;
+  }
+
+  function getTimezoneName() {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone;
+  }
+
+  function getTimezoneOffset() {
+    var timezoneOffset = new Date().getTimezoneOffset();
+    return timezoneOffset > 0
+      ? '西' + parseInt(timezoneOffset / 60) + '区'
+      : '东' + Math.abs(parseInt(timezoneOffset / 60)) + '区';
+  }
+
+  function S4() {
+    return (((1 + Math.random()) * 0x10000) | 0).toString(16).substring(1);
+  }
+  function getRandomId() {
+    var ms = new Date().getTime();
+    return ms + S4() + S4() + S4();
+  }
+
+  try {
+    // websocket
+    function WS(url) {
+      this.url = url;
+      this.ws = null;
+      this.timer = null;
+      this.reconnectCount = 0;
+      this.isReconnect = false;
+      this.timeoutObj = null;
+      this.serverTimeoutObj = null;
+      this.listeners = {
+        open: [],
+        message: [],
+      };
+    }
+
+    WS.prototype.init = function () {
+      if (!!window.WebSocket && window.WebSocket.prototype.send) {
+        this.ws = new WebSocket(this.url);
+        var self = this;
+        this.ws.onopen = function (e) {
+          self.onOpen(e);
+        };
+        this.ws.onmessage = function (e) {
+          self.onMessage(e);
+        };
+        this.ws.onclose = function () {
+          self.onClose();
+        };
+        this.ws.onerror = function (e) {
+          self.onError(e);
+        };
+      }
+    };
+
+    WS.prototype.onOpen = function (e) {
+      this.isReconnect = false;
+      this.resetCount = 0;
+      var openCbs = this.listeners.open;
+      for (var i = 0; i < openCbs.length; i++) {
+        var cb = openCbs[i];
+        if (typeof cb === 'function') {
+          cb(e);
+        }
+      }
+      this.heartCheck();
+    };
+
+    WS.prototype.onMessage = function (e) {
+      if (e.data != 'pong' && e.data != 'success') {
+        var messageCbs = this.listeners.message;
+        for (var i = 0; i < messageCbs.length; i++) {
+          var cb = messageCbs[i];
+          if (typeof cb === 'function') {
+            cb(e.data);
+          }
+        }
+      }
+      this.heartCheck();
+    };
+
+    WS.prototype.onClose = function () {
+      this.reconnect();
+    };
+
+    WS.prototype.onError = function (e) {
+      console.log(e);
+      this.reconnect();
+    };
+
+    WS.prototype.reconnect = function () {
+      if (this.isReconnect) return;
+      var self = this;
+      this.isReconnect = true;
+      this.reconnectCount++;
+      if (this.reconnectCount <= 10) {
+        this.timer = setTimeout(function () {
+          self.init();
+        }, 5000);
+      }
+    };
+
+    WS.prototype.heartCheck = function () {
+      var self = this;
+      this.timeoutObj && clearTimeout(this.timeoutObj);
+      this.serverTimeoutObj && clearTimeout(this.serverTimeoutObj);
+      this.timeoutObj = setTimeout(function () {
+        //这里发送一个心跳，后端收到后，返回一个心跳消息，
+        //onmessage拿到返回的心跳就说明连接正常
+        self.ws.send('ping');
+        self.serverTimeoutObj = setTimeout(function () {
+          self.ws.close();
+        }, 10000);
+      }, 10000);
+    };
+    // 监听接收消息事件
+    WS.prototype.addListener = function (eventName, cb) {
+      if (!this.listeners[eventName]) {
+        this.listeners[eventName] = [];
+      }
+      this.listeners[eventName].push(cb);
+    };
+
+    WS.prototype.send = function (e) {
+      if (typeof e !== 'string') {
+        e = JSON.stringify(e);
+      }
+      this.ws.send(e);
+    };
+
+    function XHR(url) {
+      return new Promise(function (resolve, reject) {
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', url, true);
+        xhr.onreadystatechange = function () {
+          if (xhr.readyState == 4 && (xhr.status == 200 || xhr.status == 304)) {
+            resolve(xhr.responseText);
+          } else {
+            reject();
+          }
+        };
+        xhr.send();
+      });
+    }
+
+    var EVENT_POSTER_UID_STORE_KEY = '__gk_event_poster_uid';
+    var EVENT_POSTER_EID_STORE_KEY = '__gk_event_poster_eid';
+
+    function Poster() {
+      this.enterTime = Date.now();
+      this.selectors = window.__gk_statistics_list || [];
+      this.uid = '';
+      var self = this;
+      this.addEventListener();
+      window.addEventListener('beforeunload', function () {
+        self.send('leave');
+      });
+    }
+
+    Poster.prototype.send = function () {};
+
+    Poster.prototype.addEventListener = function () {
+      var self = this;
+      function matchesElement(el, selector) {
+        try {
+          if (el === document) {
+            return false;
+          }
+          if (el.matches(selector)) {
+            return true;
+          }
+          if (el.parentNode) {
+            return matchesElement(el.parentNode, selector);
+          }
+          return false;
+        } catch (e) {
+          //TODO handle the exception
+          return false;
+        }
+      }
+      // 点击事件
+      document.addEventListener(
+        'click',
+        function (e) {
+          var parentNode = e.target.parentNode;
+          for (var i = 0; i < self.selectors.length; i++) {
+            var item = self.selectors[i];
+            if (
+              matchesElement(e.target, item.selector) ||
+              matchesElement(parentNode, item.selector)
+            ) {
+              self.send(item.eventName);
+            }
+          }
+        },
+        true,
+      );
+    };
+
+    Poster.prototype.getBase = function () {
+      var now = Date.now();
+      var o = {
+        url: location.href,
+        uid: this.getUid(),
+        eid: this.getEid(),
+        preEid: this.getPreEid(),
+        referrer: document.referrer,
+        tplName: window.__gk_tpl_path,
+        pageName: window.__gk_page_name,
+        host: location.host,
+        currencyId: window.__gk_currency_id,
+        duration: now - this.enterTime,
+        from: this.getFrom(),
+        queryParams: JSON.stringify(this.getQueryParams()),
+        navigatorPlatform: navigator.platform,
+        navigatorLanguage: navigator.language,
+        navigatorWebdriver: navigator.webdriver,
+        navigatorProduct: navigator.product,
+        timezoneName: getTimezoneName(),
+        timezoneOffset: getTimezoneOffset(),
+        eventId: getRandomId(),
+        pageId: pageId,
+        prePageId: prePageId,
+        traceId: getCookie('g_trace_id'),
+        pTraceId: getCookie('p_trace_id')
+      };
+      if (typeof gcookie !== 'undefined') {
+        o.serviceUid = gcookie;
+      }
+      var s = document.getElementById('socket-statistics');
+      if (s) {
+        var src = s.getAttribute('src');
+        var search = src.split('?')[1];
+        if (search) {
+          var arr = search.split('&');
+          for (var i = 0; i < arr.length; i++) {
+            var item = arr[i].split('=');
+            if (item[1]) {
+              o[item[0]] = item[1];
+            }
+          }
+        }
+      }
+      var sno = getSno();
+      if (sno) {
+        o.snoIsSame = sno == o.saleId;
+      }
+      try {
+        if (sno && o.saleId) {
+          var abStr = localStorage.getItem('__ab_obj__');
+          var abObj = {};
+          if (abStr) {
+            abObj = JSON.parse(abStr);
+          }
+          abObj[o.saleId + ''] = {
+            aId: getSno(),
+            bId: o.saleId,
+            isB: !o.snoIsSame,
+          };
+          localStorage.setItem('__ab_obj__', JSON.stringify(abObj));
+        }
+      } catch (error) {}
+      return o;
+    };
+
+    Poster.prototype.getFrom = function () {
+      var search = location.href.split('?')[1];
+      if (
+        search &&
+        search.indexOf('from=') >= 0 &&
+        search.indexOf('_from=') === -1
+      ) {
+        return search.split('from=')[1].split('&')[0];
+      }
+      var params = localStorage.getItem('__guid__params');
+      if (params) {
+        return JSON.parse(params).data.from;
+      }
+      return '';
+    };
+
+    Poster.prototype.getQueryParams = function () {
+      var search = location.href.split('?')[1];
+      if (
+        search &&
+        search.indexOf('from=') >= 0 &&
+        search.indexOf('_from=') === -1
+      ) {
+        var arr = search.split('&');
+        var o = {};
+        for (var i = 0; i < arr.length; i++) {
+          var item = arr[i].split('=');
+          if (item[1]) {
+            o[item[0]] = item[1];
+          }
+        }
+        return o;
+      }
+      var params = localStorage.getItem('__guid__params');
+      if (params) {
+        return JSON.parse(params).data;
+      }
+      return {};
+    };
+
+    // 用户id
+    Poster.prototype.getUid = function () {
+      if (this.uid) {
+        return this.uid;
+      }
+      var uid = localStorage.getItem(EVENT_POSTER_UID_STORE_KEY);
+      if (uid) {
+        this.uid = uid;
+        return uid;
+      }
+      this.uid = getRandomId();
+      localStorage.setItem(EVENT_POSTER_UID_STORE_KEY, this.uid);
+      return this.uid;
+    };
+
+    // 用户eid
+    Poster.prototype.getEid = function () {
+      var eid = localStorage.getItem(EVENT_POSTER_EID_STORE_KEY);
+      if (eid) {
+        return eid;
+      }
+      eid = getRandomId();
+      localStorage.setItem(EVENT_POSTER_EID_STORE_KEY, eid);
+      return eid;
+    };
+    Poster.prototype.removeEid = function () {
+      var eid = localStorage.getItem(EVENT_POSTER_EID_STORE_KEY);
+      localStorage.setItem('g_pre_eid', eid);
+      localStorage.removeItem(EVENT_POSTER_EID_STORE_KEY);
+    };
+    Poster.prototype.getPreEid = function () {
+      return localStorage.getItem('g_pre_eid') || '';
+    }
+
+    // 事件统计
+    function StatisticsPoster(options) {
+      Poster.call(this, options);
+      var self = this;
+      var baseData = this.getBase();
+      var wsProtocol = 'ws:';
+      var protocol = location.protocol;
+      if (protocol === 'https:') {
+        wsProtocol = 'wss:';
+      }
+      var domain = location.host;
+      var url = wsProtocol + '//' + domain + '/shopapi/wss';
+      if (baseData.orderNumber) {
+        url += '?orderNumber=' + baseData.orderNumber;
+      }
+      this.ws = new WS(url);
+      this.isReady = false;
+      this.isSendDom = true;
+      this.isSendLoaded = true;
+      this.ws.addListener('open', function () {
+        if (!self.isReady) {
+          self.isReady = true;
+          self.send('init');
+          self.send('enter');
+          if (!self.isSendDom) {
+            var timing = performance.timing;
+            if (timing) {
+              var domReadyTime =
+                timing.domContentLoadedEventStart - timing.navigationStart;
+            }
+            self.send('DOMContentLoaded', domReadyTime);
+            self.isSendDom = true;
+          }
+          if (!self.isSendLoaded) {
+            var timing = performance.timing;
+            if (timing) {
+              var loadedTime = timing.loadEventStart - timing.navigationStart;
+            }
+            self.send('loaded', loadedTime);
+            self.isSendLoaded = true;
+          }
+        }
+      });
+      this.ws.addListener('message', function (e) {
+        try {
+          var data = JSON.parse(e);
+          if (data.type === 'getSelector') {
+            for (var i = 0; i < data.data.length; i++) {
+              var item = data.data[i];
+              var flag = false;
+              for (var j = 0; j < self.selectors.length; j++) {
+                var selector = self.selectors[j];
+                if (
+                  selector.selector === item.selector &&
+                  selector.eventName === item.eventName
+                ) {
+                  flag = true;
+                  break;
+                }
+              }
+              if (!flag) {
+                self.selectors.push(item);
+              }
+            }
+          }
+        } catch (e) {
+          console.log(e);
+          //TODO handle the exception
+        }
+      });
+      this.ws.init();
+      window.addEventListener('DOMContentLoaded', function () {
+        if (self.isReady) {
+          var timing = performance.timing;
+          if (timing) {
+            var domReadyTime =
+              timing.domContentLoadedEventStart - timing.navigationStart;
+          }
+          self.send('DOMContentLoaded', domReadyTime);
+        } else {
+          self.isSendDom = false;
+        }
+      });
+      window.addEventListener('load', function () {
+        if (self.isReady) {
+          var timing = performance.timing;
+          if (timing) {
+            var loadedTime = timing.loadEventStart - timing.navigationStart;
+          }
+          self.send('loaded', loadedTime);
+        } else {
+          self.isSendLoaded = false;
+        }
+      });
+    }
+    StatisticsPoster.prototype = Object.create(Poster.prototype);
+    StatisticsPoster.prototype.constructor = Poster;
+    // 发送消息
+    StatisticsPoster.prototype.send = function (eventName, time) {
+      if (eventName === 'init') {
+        this.ws.send(
+          JSON.stringify({
+            messageType: 'getEventStatisticsConfig',
+            data: {
+              pageName: window.__gk_page_name,
+            },
+          }),
+        );
+        return;
+      }
+      var data = this.getBase();
+      data.eventName = eventName;
+      if (time && time > 0) {
+        data.time = time;
+      }
+      this.ws.send(
+        JSON.stringify({
+          messageType: 'eventStatistics',
+          data: data,
+        }),
+      );
+    };
+
+    // 图片统计
+    function ImagePoster(options) {
+      Poster.call(this, options);
+      var self = this;
+      this.send('enter');
+      window.addEventListener('DOMContentLoaded', function () {
+        var timing = performance.timing;
+        if (timing) {
+          var domReadyTime = timing.navigationStart
+            ? timing.domContentLoadedEventStart - timing.navigationStart
+            : 0;
+        }
+        self.send('DOMContentLoaded', {}, domReadyTime);
+        setTimeout(() => {
+          var timing = performance.timing;
+          if (timing) {
+            var domReadyTime = timing.navigationStart
+              ? timing.domContentLoadedEventStart - timing.navigationStart
+              : 0;
+          }
+          self.send('DOMContentLoadedDiff', {}, domReadyTime);
+        }, 2000);
+      });
+      window.addEventListener('load', function () {
+        var timing = performance.timing;
+        if (timing) {
+          var loadedTime = timing.navigationStart
+            ? timing.loadEventStart - timing.navigationStart
+            : 0;
+        }
+        self.send('loaded', {}, loadedTime);
+      });
+    }
+    ImagePoster.prototype = Object.create(Poster.prototype);
+    ImagePoster.prototype.constructor = Poster;
+
+    ImagePoster.prototype.send = function (eventName, options = {}, time) {
+      var data = this.getBase();
+      data.url = data.url.replace(/\&/g, '__and__');
+      data.referrer = data.referrer.replace(/\&/g, '__and__');
+      data.eventName = eventName;
+      data = {
+        ...data,
+        ...options,
+      };
+      if (time && time > 0) {
+        data.time = time;
+      }
+      if (eventName === 'leave') {
+        deleteCookie('p_trace_id');
+      }
+      try {
+        var src1 =
+          '/shopapi/tracking.gif?tracking_data=' +
+          JSON.stringify({ ...data, isAjax: true }) +
+          '&t=' +
+          new Date().getTime();
+        fetch(src1, {
+          keepalive: true,
+          method: 'GET',
+        }).catch(function () {});
+        // if (typeof navigator !== 'undefined' && navigator.sendBeacon) {
+        //   var src2 =
+        //     '/shopapi/tracking.gif?tracking_data=' +
+        //     JSON.stringify({ ...data, isNewApi: true }) +
+        //     '&t=' +
+        //     new Date().getTime();
+        //   navigator.sendBeacon(src2);
+        // }
+      } catch (e) {
+        //TODO handle the exception
+      }
+
+      var src =
+        '/shopapi/tracking.gif?tracking_data=' +
+        JSON.stringify(data) +
+        '&t=' +
+        new Date().getTime();
+      var img = new Image();
+      img.src = src;
+
+      if (
+        eventName === 'submitFormSuccess' ||
+        eventName === 'expressPaySuccess'
+      ) {
+        this.removeEid();
+      }
+    };
+    window.statisticsPoster = new ImagePoster();
+  } catch (e) {
+    //TODO handle the exception
+    console.log(e);
+  }
+})();

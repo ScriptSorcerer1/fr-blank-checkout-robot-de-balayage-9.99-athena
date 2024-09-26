@@ -1,0 +1,32 @@
+(function () {
+  window.isHaveOrder = async function (orderAgain, productId) {
+    if(typeof Vue === 'undefined') {
+      return false;
+    }
+    var readyOrder = store.get('_ready_order_number');
+    if (!(orderAgain && orderAgain / 1)) return false;
+    if (!readyOrder) return false;
+    var orderNum = '';
+    var order = [];
+    readyOrder.forEach(v => {
+      var time = new Date().getTime() - v.time;
+      if (time / 1000 < Number(orderAgain)) {
+        var temp = v.goodsid.some(k => String(k) === productId);
+        orderNum = temp ? v.orderNum : orderNum;
+        order.push(v);
+      }
+    });
+    store.set('_ready_order_number', order);
+
+    if (orderNum && 'undefined' != typeof getlimitOrder) {
+      try {
+        let r = await getlimitOrder({ orderNumber: orderNum }, orderAgain);
+        if (r.data && r.data == null) return false;
+        return r;
+      } catch (err) {
+        console.log(err);
+        return false;
+      }
+    }
+  };
+})();

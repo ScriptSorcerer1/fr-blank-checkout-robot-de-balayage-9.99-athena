@@ -1,0 +1,195 @@
+var reqCdnPath =  typeof commonPath !== 'undefined' ? commonPath.replace('V3/common', '') : typeof fileCdnJsPath !== 'undefined' ? fileCdnJsPath : '';
+require.config({
+  paths: {
+    vue: [
+      reqCdnPath
+        ? reqCdnPath + 'V3/common/assets/js/vue.min'
+        : '/V3/common/assets/js/vue.min',
+      '/V3/common/assets/js/vue.min'
+    ],
+    app: [
+      reqCdnPath
+        ? reqCdnPath + 'V3/common/assets/js/app'
+        : '/V3/common/assets/js/app',
+      '/V3/common/assets/js/app'
+    ],
+    currencyNew: [
+      reqCdnPath
+        ? reqCdnPath + 'V3/common/assets/js/currency-new'
+        : '/V3/common/assets/js/currency-new',
+      '/V3/common/assets/js/currency-new'
+    ],
+    currencyHoverNew: [
+      reqCdnPath
+        ? reqCdnPath + 'V3/common/assets/js/currency-hover'
+        : '/V3/common/assets/js/currency-hover',
+      '/V3/common/assets/js/currency-hover'
+    ],
+    customerApi: ['/V3/common/assets/js/customer-api'],
+    triggerLazyload: [
+      reqCdnPath
+        ? reqCdnPath + 'V3/common/assets/js/trigger-lazyload'
+        : '/V3/common/assets/js/trigger-lazyload',
+      '/V3/common/assets/js/trigger-lazyload'
+    ],
+    jqueryLazyload: [
+      reqCdnPath
+        ? reqCdnPath + 'V3/common/assets/js/jquery.lazyload'
+        : '/V3/common/assets/js/jquery.lazyload',
+      '/V3/common/assets/js/jquery.lazyload'
+    ],
+    swiperComment: [
+      reqCdnPath
+        ? reqCdnPath + 'V3/common/assets/js/require/carousel/swiper-comment'
+        : '/V3/common/assets/js/require/carousel/swiper-comment',
+      '/V3/common/assets/js/require/carousel/swiper-comment'
+    ],
+    aes: [
+      reqCdnPath
+        ? reqCdnPath + 'V3/common/assets/js/aes'
+        : '/V3/common/assets/js/aes',
+      '/V3/common/assets/js/aes'
+    ],
+    aes1: [
+      reqCdnPath
+        ? reqCdnPath + 'V3/FASTS_01/assets/lib/aes'
+        : '/V3/FASTS_01/assets/lib/aes',
+      '/V3/FASTS_01/assets/lib/aes'
+    ],
+    custCode: ['/front/res/js/cust-code'],
+    comment: [
+      reqCdnPath
+        ? reqCdnPath + 'V3/common/assets/js/require/comment/comment'
+        : '/V3/common/assets/js/require/comment/comment',
+      '/V3/common/assets/js/require/comment/comment'
+    ],
+    getTimestamp: [
+      reqCdnPath
+        ? reqCdnPath + 'V3/common/asset/js/vue.min'
+        : '/V3/common/assets/js/get-time',
+      '/V3/common/assets/js/get-time'
+    ],
+    getDetailSinfo: [
+      reqCdnPath
+        ? reqCdnPath + 'V3/common/assets/js/detail-sinfo'
+        : '/V3/common/assets/js/detail-sinfo',
+      '/V3/common/assets/js/detail-sinfo'
+    ],
+    easycart: ['/V3/common/assets/js/easycart'],
+    lozad: ['/V3/common/assets/js/lozad/lozad.min'],
+    replaceGifToMp4: [
+      reqCdnPath
+        ? reqCdnPath + 'V3/common/assets/js/replaceGifToMp4'
+        : '/V3/common/assets/js/replaceGifToMp4',
+      '/V3/common/assets/js/replaceGifToMp4'
+    ],
+    swiper: [
+      reqCdnPath
+        ? reqCdnPath + 'V3/common/assets/js/swiper.min'
+        : '/V3/common/assets/js/swiper.min',
+      '/V3/common/assets/js/swiper.min'
+    ],
+    imageZoom: [
+      reqCdnPath
+        ? reqCdnPath + 'V3/common/assets/js/image-zoom.min'
+        : '/V3/common/assets/js/image-zoom.min',
+      '/V3/common/assets/js/image-zoom.min'
+    ],
+    fancybox: [
+      reqCdnPath
+        ? reqCdnPath + 'V3/common/assets/js/fancybox'
+        : '/V3/common/assets/js/fancybox',
+      '/V3/common/assets/js/fancybox'
+    ],
+    slick: [
+      reqCdnPath
+        ? reqCdnPath + 'V3/common/assets/js/slick.min'
+        : '/V3/common/assets/js/slick.min',
+      '/V3/common/assets/js/slick.min'
+    ],
+    flashDetail: [
+      reqCdnPath
+        ? reqCdnPath + 'V3/common/assets/js/require/flash-detail/flash-detail'
+        : '/V3/common/assets/js/require/flash-detail/flash-detail',
+      '/V3/common/assets/js/require/flash-detail/flash-detail'
+    ],
+    skuAddcart: [
+      reqCdnPath
+        ? reqCdnPath + 'V3/common/assets/js/require/sku/sku-addcart'
+        : '/V3/common/assets/js/require/sku/sku-addcart',
+      '/V3/common/assets/js/require/sku/sku-addcart'
+    ],
+    getComment: [
+      '/V3/common/assets/js/require/comment/get-comment'
+    ],
+    getNewComment: [
+      '/V3/common/assets/js/require/comment/get-new-comment'
+    ],
+    customeService: ['/V3/common/assets/js/service/custom-service'],
+    copy: [
+      reqCdnPath
+        ? reqCdnPath + 'V3/common/assets/js/clipboard.min'
+        : '/V3/common/assets/js/clipboard.min',
+      '/V3/common/assets/js/clipboard.min'
+    ],
+    purchaseTipsData: ['/V3/common/assets/js/require/purchase-tips-data'],
+    detailPulicFooterJs:['/V3/common/assets/js/detail/detail']
+  },
+  shim: {
+    app: {
+      init: function () {
+        return {
+          App,
+          getGserviceToken
+        };
+      }
+    },
+    currencyNew: {
+      init: function () {
+        return {
+          winCurrency: currency
+        };
+      }
+    },
+    currencyHoverNew: {
+      init: function () {
+        return {
+          winCurrency: currency
+        };
+      }
+    },
+    customerApi: {
+      init: function () {
+        return {
+          customerApi,
+          getOrderForModify,
+          getOrderAddressForModify
+        };
+      }
+    },
+    aes: {
+      deps: ['triggerLazyload']
+    },
+    triggerLazyload: {
+      deps: ['jqueryLazyload']
+    },
+    getTimestamp: {
+      exports: 'getTimestamp'
+    },
+    getDetailSinfo: {
+      exports: 'getDetailSinfo'
+    },
+    easycart: {
+      exports: 'EasyCart'
+    },
+    replaceGifToMp4: {
+      init: function () {
+        return {
+          replaceGifToMp4,
+          createMp4,
+          getGifData
+        };
+      }
+    }
+  }
+});

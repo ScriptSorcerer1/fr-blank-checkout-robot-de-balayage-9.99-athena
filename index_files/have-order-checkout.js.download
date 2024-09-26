@@ -1,0 +1,720 @@
+require([], function () {
+  var haveOrder = null;
+  if (typeof Vue !== 'undefined') {
+    haveOrder = new Vue({
+      el: '#product-order',
+      data: {
+        repeatOrderData: {},
+        splitProductDetails: [],
+        orderData: {
+          originDetails: []
+        }, // 订单数据
+        orderNumber: '',
+        orderTime: '',
+        orderStatus: '',
+        statusList: [2, 3, 4, 5, 9, 10, 11, 20, 21, 24],
+        canMedifyOrderIds: [2, 4, 5, 9], // 2: 待审核 4: 待发货 5: 已转采购 9: 问题订单
+        address: {},
+        originDetails: {},
+        amount: '',
+        list: [],
+        limitTime: 0,
+        serviceLink: '',
+        logistics: { track_date: '', track_info: '' },
+        email: sendEmail,
+        payType: 0,
+        languageId,
+        lang: {},
+        reasonRequied: false,
+        reason: '',
+        detailReason: '',
+        reasonList: ['加购/复购', '修改收货信息', '下错订单/更换商品', '修改订购数量', '其他原因（价格等）'],
+        subscribeLang: {},
+        openModifyType: false, // 是否打开选择修改商品类型弹框
+        viewOrderProductShow: false, // 是否显示查看选择修改商品sku弹框
+        modeifyProductLabel: '', // 修改商品sku label
+        modeifyProduct: null, //修改商品sku
+        subscribesData: {
+          addressInfo: {},
+          productInfo: {}
+        }, // 订阅渲染数据
+        subscribeLang: null, // 订阅渲染语言
+        hasVirtualSpec: false, // 是否有虚拟规格
+        labelNum: 1
+      },
+      mixins: typeof subscribeMixin !== 'undefined' ? [subscribeMixin] : [],
+      watch: {
+        list() {
+          this.$nextTick(() => {
+            var listMaxHeight =
+              $('.order-detail').height() -
+              $('.hint').innerHeight() -
+              $('.order-body>.card').innerHeight() -
+              90 +
+              'px';
+            $('.scroll-zone').css({ 'max-height': listMaxHeight });
+          });
+        },
+        reason(value) {
+          this.reasonRequied = Number(value) === 5;
+        }
+      },
+      created() {
+        if (typeof lang !== 'undefined') {
+          this.lang = lang;
+        }
+        if (typeof subscribeLang !== 'undefined') {
+          this.subscribeLang = subscribeLang;
+        }
+        if (typeof repeatOrderData !== 'undefined') {
+          this.repeatOrderData = repeatOrderData;
+        }
+      },
+      methods: {
+        buyAgain() {
+          $('.order-detail').removeClass('anim-up');
+          $('.buy-again-reason').addClass('anim-up');
+        },
+        continueBuy() {
+          if (this.reason) {
+            if (5 === Number(this.reason) && !this.detailReason) {
+              toast(lang.buyAgainDetailedReason);
+              return;
+            }
+            store.set("buy_again_reason", {
+              orderNum: this.orderNumber,
+              reason: this.reasonList[Number(this.reason) - 1],
+              detailedReason: this.detailReason
+            })
+            $("#continueBuy").click();
+            $('.buy-again-reason').removeClass('anim-up');
+            $('.product-order').removeClass('giikin-on');
+          } else {
+            toast(lang.buyAgainReasonHint)
+          }
+        },
+        getPushSubscribeData() {
+          var data = {
+            lang: {},
+            detailHref: store.get('location_href')
+          };
+          if (this.subscribeLang) {
+            data.lang = JSON.stringify({
+              pushSubscribeTitle1: this.subscribeLang.pushSubscribeTitle1,
+              pushSubscribeContent1: this.subscribeLang.pushSubscribeContent1,
+              pushSubscribeTitle2: this.subscribeLang.pushSubscribeTitle2,
+              pushSubscribeContent2: this.subscribeLang.pushSubscribeContent2,
+              pushSubscribeContent3: this.subscribeLang.pushSubscribeContent3,
+            })
+          }
+          return data;
+        },
+        medifyOrder() {
+          this.modeifyProductLabel = '';
+          if (typeof repeatOrderModifySku !== 'undefined' && repeatOrderModifySku && this.canMedifyOrderIds.includes(this.orderStatus)) {
+            if (!this.hasVirtualSpec) {
+              this.openModifyType = true;
+              $('.order-detail').removeClass('anim-up');
+            } else {
+              $('.address-order-mask').addClass('order-mask-show');
+              $('.order-detail').removeClass('anim-up');
+            }
+          } else {
+            window.open(this.serviceLink);
+          }
+        },
+        closeModifyType() {
+          this.openModifyType = false;
+          $('.order-detail').addClass('anim-up');
+        },
+        openMedify(val) {
+          if (val === 'sku') {
+            this.viewOrderProductShow = true;
+            $('.order-detail').removeClass('anim-up');
+          } else {
+            $('.address-order-mask').addClass('order-mask-show');
+            $('.order-detail').removeClass('anim-up');
+          }
+          this.openModifyType = false;
+        },
+        // 提交修改地址
+        submitAddress(value) {
+          var data = {
+            order_number: this.orderNumber,
+            ...value,
+            address_detail: JSON.stringify(value),
+          };
+          Object.assign(data, this.getPushSubscribeData());
+          this.subscribesRenderData(data, 2)
+          customerApi.updateOrderAddress(
+            data,
+            res => {
+              if (res.code === 0) {
+                if (res.status) {
+                  // 返回数据有status 则代表是已转采购状态提示订阅
+                  if (this.alreadySubscribed) {
+                    toast(this.subscribeLang.alreadySubscribedHint);
+                  } else {
+                    this.subscribe(5);
+                  }
+                } else {
+                  toast(this.lang.modifySuccess);
+                }
+              } else {
+                toast(
+                  this.lang.orderNotAllowModify
+                    ? this.lang.orderNotAllowModify
+                    : 'This order does not allow modification'
+                );
+              }
+              $('.product-order').removeClass('giikin-on');
+              $('.address-order-mask').removeClass('order-mask-show');
+              $('.address-order-mask .bottom-button').html(
+                this.lang.confirm ? this.lang.confirm : 'confirm'
+              );
+            },
+            err => {
+              console.log(err);
+              toast(
+                this.lang.orderNotAllowModify
+                  ? this.lang.orderNotAllowModify
+                  : 'This order does not allow modification'
+              );
+              $('.product-order').removeClass('giikin-on');
+              $('.address-order-mask').removeClass('order-mask-show');
+              $('.address-order-mask .bottom-button').html(
+                this.lang.confirm ? this.lang.confirm : 'confirm'
+              );
+            }
+          );
+        },
+        renderOrder(data) {
+          this.orderData = data;
+          data.originDetails.forEach(e => {
+            var notSplit = e.rules && e.rules.some(item => Number(item.rule) === 11 && Number(item.nosuit) === 2);
+            var detailItems = [];
+            e.items.forEach((v) => {
+              v.notSplit = notSplit;
+              v.labelItem = 'labelItem' + this.labelNum;
+              this.labelNum += 1;
+              if (v.details) {
+                this.hasVirtualSpec = true;
+                v.virtualSpec = '';
+                v.options.forEach(d => {
+                  
+                })
+              }
+              if (v.image.indexOf('http') == -1) {
+                v.image = cdn + v.image;
+              }
+              var spec = '';
+              var optvs = '';
+              v.options.forEach(op_item => {
+                spec += spec ? ' ' + op_item.vname : op_item.vname;
+                optvs += op_item.vid + '#';
+              });
+              if (!v.optvs) {
+                v.optvs = optvs;
+              }
+              v.spec = spec;
+              if (Number(v.gift) === 1 || (typeof v.giftShow === 'undefined' || Number(v.giftShow))) {
+                detailItems.push({ ...v, labelItem: this.labelNum });
+                this.labelNum += 1;
+              }
+            });
+            e.items = detailItems;
+          });
+          this.modifySku(data.originDetails);
+          this.subscribesData.jumpHref = store.get('location_href');
+          if ([1, 31].includes(Number(data.payment.payType))) {
+            this.subscribesData.payName = this.lang.cod ? this.lang.cod : 'Cash on delivery';
+          } else {
+            this.subscribesData.payName = this.lang.online ? this.lang.online : 'Online Payment';
+          }
+          this.orderTime = formatCurrentTime(data.addtime);
+          this.orderNumber = data.orderNum;
+          this.address = data.address;
+          this.amount = publiceFormatCurrency(parseInt(data.amount));
+          this.list = JSON.parse(JSON.stringify(data.originDetails));
+          this.originDetails = JSON.parse(JSON.stringify(data.originDetails));
+          this.serviceLink = data.serviceLink;
+          this.logistics.track_date = formatCurrentTime(data.logistics.track_date);
+          this.logistics.track_info = this.lang[data.logistics.track_info];
+          this.orderStatus = data.orderStatus;
+          this.payType = data.payment.payType;
+          $('.product-order').addClass('giikin-on');
+          $('.order-detail').addClass('anim-up');
+          $('body').addClass('disable-scroll');
+          this.subscribesRenderData(data.address, 2);
+        },
+        // 修改SKU弹框数据处理
+        modifySku(data) {
+          this.splitProductDetails = JSON.parse(JSON.stringify(data));
+          this.splitProductDetails.forEach((v, j) => {
+            var sliptNewSku = [];
+            v.items.forEach(k => {
+              if (k.number > 1 && !k.notSplit) {
+                var num = k.number;
+                for (var i = 0; i < num; i++) {
+                  sliptNewSku.push({
+                    ...k,
+                    number: 1,
+                    labelItem: 'labelItem' + this.labelNum,
+                    parentIndex: k.labelItem
+                  });
+                  this.labelNum++;
+                }
+              } else {
+                sliptNewSku.push(k);
+              }
+            });
+            if (sliptNewSku.length) {
+              this.splitProductDetails[j].items = sliptNewSku;
+            }
+          });
+        },
+        formatAmount() {
+          var data = this.orderData;
+          var orderAmount = publiceFormatCurrency(data.amount);
+          var amount = Number(currencyPos)
+            ? '<span class="symbol">' +
+            symbol +
+            '</span> <span class="amount">' +
+            orderAmount +
+            '</span>'
+            : '<span class="amount">' +
+            orderAmount +
+            '</span><span class="symbol">' + symbol +
+            '</span>';
+          if (this.repeatOrderData.exciseTax && !Number(this.repeatOrderData.exciseTax.trim())) {
+            $('.order-top .order-amount').html(amount);
+            return amount;
+          }
+          if ([1, 31].includes(Number(data.payment.payType)) && this.repeatOrderData.taxHint) {
+            if (Number(this.codTax)) {
+              amount = this.currencyPos
+                ? amount +
+                '<em class="inc-tax">(' +
+                this.repeatOrderData.taxHint +
+                '<span class="symbol">' +
+                this.symbol +
+                '</span>' +
+                '<span class="amount">' +
+                publiceFormatCurrency(Number(data.amount) + Math.round(this.repeatOrderData.codTax)) +
+                '</span>' +
+                ')</em>'
+                : amount +
+                '<em class="inc-tax">(' +
+                this.repeatOrderData.taxHint +
+                '<span class="amount">' +
+                publiceFormatCurrency(Number(data.amount) + Math.round(this.repeatOrderData.codTax)) +
+                '</span>' +
+                '<span class="symbol">' +
+                this.symbol +
+                '</span>';
+              (')</em>');
+            }
+          } else if (siteTemplate === 'SGKS_01') {
+            amount = amount + taxHint;
+          }
+          return amount;
+        },
+        // 确认修改商品SKU
+        modifyProduct() {
+          if (!this.modeifyProductLabel) {
+            toast(this.lang.selectModify);
+            return;
+          }
+          this.splitProductDetails.forEach(v => {
+            var item = v.items.find(k => k.labelItem == this.modeifyProductLabel);
+            this.modeifyProduct = item || this.modeifyProduct;
+          });
+          var sale = {
+            id: this.modeifyProduct.id,
+            poid: this.modeifyProduct.poid,
+            guid: this.modeifyProduct.guid,
+            number: this.modeifyProduct.realQuantity || this.modeifyProduct.number,
+            activityId: '',
+            offset: this.modeifyProduct.offsetPrice || this.modeifyProduct.offset || 0,
+            opts: this.modeifyProduct.optvs.split('#'),
+            successModifySku: true
+          };
+          changeSpec(sale);
+          this.viewOrderProductShow = false;
+        },
+        // 订阅回显数据
+        subscribesRenderData(data, type) {
+          // type: 1:修改商品信息 2:修改地址信息
+          if (type === 1) {
+            var list = [];
+            data.forEach(v => {
+              v.items.forEach(k => {
+                if (Number(k.gift) !== 1 || typeof k.giftShow === 'undefined' || Number(k.giftShow)) {
+                  list.push({
+                    pid: k.pid,
+                    spec: k.spec + 'x' + k.number,
+                  })
+                }
+              })
+            })
+            this.subscribesData.productInfo = {
+              amount: this.formatAmount(),
+              list,
+              time: this.orderData.addtime,
+            };
+            this.subscribesData.orderNum = this.orderNum;
+            this.subscribesData.payType = this.orderData.payType;
+          } else {
+            this.subscribesData.addressInfo = {
+              name: data.first_name + data.last_name,
+              phone: data.phone,
+              fullAds: Number(currencyId) === 40 ? data.state + data.city + data.address : data.state + data.city + data.zone + data.address
+            }
+          }
+        },
+        // 提交sku修改
+        submitData() {
+          var newInfo = JSON.parse(JSON.stringify(this.originDetails));
+          newInfo.forEach(v => {
+            v.items = v.items.reduce((totalArr, cur) => {
+              var hasValue = totalArr.findIndex(current => {
+                return current.poid === cur.poid;
+              });
+              hasValue === -1 && totalArr.push(cur);
+              hasValue !== -1 && (totalArr[hasValue].number = totalArr[hasValue].number + cur.number);
+              return totalArr;
+            }, []);
+          });
+          var data = {
+            order_number: this.orderNumber,
+            product_info: JSON.stringify(newInfo)
+          };
+          Object.assign(data, this.getPushSubscribeData());
+          this.subscribesRenderData(newInfo, 1)
+          customerApi.updateOrderDetail(
+            data,
+            res => {
+              $('.product-order .product-order').hide();
+              if (res.code === 0) {
+                // 返回数据有status 则代表是已转采购状态提示订阅
+                if (res.status) {
+                  if (this.alreadySubscribed) {
+                    toast(this.lang.alreadySubscribedHint);
+                  } else {
+                    this.subscribe(5);
+                  }
+                } else {
+                  toast(this.lang.modifySuccess);
+                }
+              } else {
+                toast(
+                  this.lang.orderNotAllowModify || 'This order does not allow modification'
+                );
+              }
+              $('.product-order').removeClass('giikin-on');
+              this.viewOrderProductShow = false;
+            },
+            err => {
+              $('.product-order .product-order').hide();
+              console.log(err);
+              toast(
+                this.lang.orderNotAllowModify || 'This order does not allow modification'
+              );
+              $('.product-order').removeClass('giikin-on');
+              this.viewOrderProductShow = false;
+            }
+          );
+        },
+      }
+    });
+  }
+
+  $('.iconguanbi, .order-mask-close').on('click', function () {
+    if ($(this).hasClass('buy-again-close')) {
+      $('.order-detail').addClass('anim-up');
+      $('.buy-again-reason').removeClass('anim-up');
+    } else {
+      $('.product-order').removeClass('giikin-on');
+      $('.order-detail').removeClass('anim-up');
+      $('.customer-service').removeClass('anim-up');
+      $('body').removeClass('disable-scroll');
+    }
+  });
+
+  $(document).ready(function () {
+    $('.link-service').click(function () {
+      $('.order-detail').removeClass('anim-up');
+      $('.customer-service').addClass('anim-up');
+    });
+  });
+
+  // 获取30分钟内的订单
+  window.getlimitOrder = function (param, orderAgainTime) {
+    var orderStatusArr = [1, 9, 10, 11, 14];
+    var localTime = new Date().getTime();
+    var data = {
+      "code": 0,
+      "comment": "success",
+      "data": {
+        "orderNum": "GP240815092039IAB5F2",
+        "amount": "4319.00",
+        "buyContent": "",
+        "quantity": 1,
+        "addtime": "2024-08-15 09:20:39",
+        "orderStatus": 2,
+        "cartInfo": "PC",
+        "ip": "103.98.19.91",
+        "notes": "",
+        "collId": 1001014590,
+        "areaId": 139,
+        "currencyId": 13,
+        "langId": 2,
+        "marketId": 100,
+        "updateTime": "2024-08-15 09:26:51",
+        "payment": {
+          "payType": 1,
+          "card": 0,
+          "payAmount": "4319.00",
+          "time": "2024-08-15 09:20:39",
+          "cardNo": "",
+          "cvv": "",
+          "year": "",
+          "month": "",
+          "firstname": "",
+          "lastname": ""
+        },
+        "address": {
+          "phone": "96333333",
+          "email": "",
+          "city": "\u5927\u5b89\u5340",
+          "state": "\u53f0\u5317\u5e02",
+          "address": "",
+          "country_code": "TW",
+          "zip": "",
+          "firstname": "",
+          "lastname": ""
+        },
+        "details": [
+          {
+            "pid": 1007338945,
+            "name": "",
+            "amount": "",
+            "guid": "",
+            "poid": 0,
+            "price": "",
+            "offset": "",
+            "number": "",
+            "items": [
+              {
+                "id": 1007338945,
+                "gift": 0,
+                "price": "4320.00",
+                "offset": 0,
+                "number": 1,
+                "rule": "",
+                "options": [
+                  {
+                    "id": "",
+                    "name": "\u7814\u53d1\u6d4b\u8bd5\u52ff\u5220 590697#X1000970591M-Portable Folding Tables and Chairs--test\u7814\u53d1\u6d4b\u8bd5\u52ff\u5220\u5546\u54c1\u4ea7\u54c1",
+                    "vid": "",
+                    "vname": "\u7e41\u4f53\u4e2d\u6587\u56fd\u9645\u5316 \u767d\u8272,XXL\u7e41\u4e2d",
+                    "sort": ""
+                  }
+                ],
+                "image": "uploads\/ef6dcae34ae3f550be96fdd3a13c92a7.jpg",
+                "poid": 3107440,
+                "name": "\u7814\u53d1\u6d4b\u8bd5\u52ff\u5220 Portable Folding Tables and Chairs--test\u7814\u53d1\u6d4b\u8bd5\u52ff\u5220\u5546\u54c1\u4ea7\u54c1",
+                "spec": "\u7e41\u4f53\u4e2d\u6587\u56fd\u9645\u5316 \u767d\u8272,XXL\u7e41\u4e2d",
+                "optvs": "",
+                "symbol": ""
+              }
+            ]
+          }
+        ],
+        "originDetails": [
+          {
+            "pid": 936068118,
+            "name": "【限時瘋搶！僅此一次！】韓版時尚女士單肩斜跨包",
+            "amount": 1759,
+            "guid": "172368688349174bdb6209916",
+            "poid": 0,
+            "rules": [],
+            "items": [
+              {
+                "id": "936068118",
+                "gift": 0,
+                "price": "1759.00",
+                "offset": 0,
+                "offsetPrice": "0",
+                "number": 2,
+                "rule": "0",
+                "ruleId": "0",
+                "options": [
+                  {
+                    "id": "78929",
+                    "number": "1",
+                    "name": "顏色",
+                    "vid": "297696",
+                    "vname": "棕色",
+                    "sort": "50"
+                  }
+                ],
+                "image": "https://static.compgoo.com/ueditor/20190117/5dea69199889e0cfef444d1a13f6cf35.jpg",
+                "poid": 629934,
+                "guid": "1723686883491d567822560ac",
+                "name": "【限時瘋搶！僅此一次！】韓版時尚女士單肩斜跨包",
+                "spec": "棕色",
+                "optvs": "297696#",
+                "isBlindBox": false,
+                "symbol": "฿",
+                "subStock": 0
+              }
+            ],
+            "price": 1759,
+            "originPrice": 2512.16,
+            "offset": 0,
+            "promotion": [],
+            "number": 1
+          }
+        ]
+        ,
+        "params": {
+          "payAgain": []
+        },
+        "logistics": {
+          "track_date": "2024-08-15 09:20:39",
+          "is_virtual": 1,
+          "track_info": "order_to_be_reviewed"
+        },
+        "serviceLink": "\/customer\/commonSale?orderNumber=GP240815092039IAB5F2&lang=TW"
+      }
+    }
+    // haveOrder.renderOrder(data.data)
+    // return true
+    return customerApi.getOrderAgain(param).then(res => {
+      if (res) {
+        if (orderStatusArr.includes(res.orderStatus)) return false;
+        var addTime = new Date(res.addtime).getTime() + (orderAgainTime / 1) * 1000;
+        if (localTime - addTime >= 0) {
+          return false;
+        } else {
+          haveOrder.renderOrder(res);
+          return true;
+        }
+      }
+    });
+  };
+
+  // 东八区指定时间换算时区
+  function formatCurrentTime(time) {
+    //获取当前时区值，比如北京为东八区则输进8,西5输入-5
+    var offset = -new Date().getTimezoneOffset() / 60;
+    var date = time.replace(/-/g, '/');
+    var targetTime = new Date(date);
+    var utc = targetTime.getTime() + -28800000; //-28800000东八区
+    var actualTime = new Date(utc + 3600000 * offset);
+
+    var year = actualTime.getFullYear();
+    var month =
+      actualTime.getMonth() + 1 > 9 ? actualTime.getMonth() + 1 : '0' + (actualTime.getMonth() + 1);
+    var day = actualTime.getDate() > 9 ? actualTime.getDate() : '0' + actualTime.getDate();
+    var hour = actualTime.getHours() > 9 ? actualTime.getHours() : '0' + actualTime.getHours();
+    var minute =
+      actualTime.getMinutes() > 9 ? actualTime.getMinutes() : '0' + actualTime.getMinutes();
+    var second =
+      actualTime.getSeconds() > 9 ? actualTime.getSeconds() : '0' + actualTime.getSeconds();
+    return year + '-' + month + '-' + day + ' ' + hour + ':' + minute + ':' + second;
+  }
+  function separation(num) {
+    //字符串没三位加特殊符号
+    var numpart = String(num).split('.');
+    numpart[0] = numpart[0].replace(new RegExp('(\\d)(?=(\\d{3})+$)', 'ig'), '$1,');
+    return numpart.join('.');
+  }
+  $('body').on('click', '.order-mask .bg-mask,.address-order-mask .modify-close , .product-order-mask .modify-close', () => {
+    $('.address-order-mask, .product-order-mask').removeClass('order-mask-show');
+    $('.product-order .order-detail').addClass('anim-up');
+  });
+  $('body').on('click', '.address-order-mask .bottom-button', function () {
+    $('#custInfoForm').submit();
+  });
+  // 修改商品SKU数据后回显，与提交数据处理
+  window.modifyOrderSpec = function (data) {
+    $('.product-order .product-order').show();
+    data.items.forEach(item => {
+      item.optvs = '';
+      item.options.forEach(item_k => {
+        item.optvs += item_k.vid + '#';
+      });
+      item.optvs = item.optvs.slice(0, item.optvs.length - 1);
+    });
+    var changeData = data.items[0];
+    var curModifyProduct = haveOrder.modeifyProduct;
+    haveOrder.originDetails.forEach((p_item, index) => {
+      var item = p_item.items.findIndex(
+        i_item =>
+          i_item.labelItem == curModifyProduct.labelItem ||
+          i_item.labelItem == curModifyProduct.parentIndex
+      );
+      if (item > -1) {
+        var itemInfo = p_item.items[item];
+        if (itemInfo.spec.trim() == changeData.spec.trim()) {
+          return;
+        }
+        var ruleInfo = { rule: itemInfo.rule, ruleId: itemInfo.ruleId };
+        changeData = Object.assign({}, itemInfo, changeData, ruleInfo);
+        if (itemInfo.isAdd) {
+          Vue.set(haveOrder.originDetails[index].items, item, {
+            ...changeData,
+            labelItem: itemInfo.labelItem,
+            parentIndex: itemInfo.parentIndex,
+            isAdd: true
+          });
+        } else if (itemInfo.number > 1 && !itemInfo.notSplit) {
+          haveOrder.originDetails[index].items[item].number -= 1;
+
+          haveOrder.originDetails[index].items.push({
+            ...changeData,
+            labelItem: haveOrder.labelNum,
+            parentIndex: itemInfo.parentIndex,
+            isAdd: true
+          });
+          haveOrder.labelNum += 1;
+        } else {
+          Vue.set(haveOrder.originDetails[index].items, item, {
+            ...changeData,
+            labelItem: itemInfo.labelItem
+          });
+        }
+      }
+    });
+    haveOrder.submitData();
+  };
+  if (typeof repeatOrderModifySku !== 'undefined' && repeatOrderModifySku) {
+  window.submitOrder = function () {
+    $('.address-order-mask .address-submit-btn').html(`<i class="loader-02"></i>`);
+    if (typeof modifyData !== 'undefined') {
+      $('#submitForm').attr('disabled', false).html(modifyData.submitHint);
+    }
+    // 提交订单前地址的特殊处理
+    if (typeof beforeSubmitAddFn !== 'undefined') {
+      beforeSubmitAddFn();
+    }
+    var data = $('#custInfoForm').serializeArray();
+    var newData = {};
+    data.forEach(item => {
+      newData[item.name] = item.value;
+    });
+    haveOrder.submitAddress(newData);
+  };
+  }
+  window.getsinfoErr = function () {
+    toast('获取商品想信息失败，请重试');
+    haveOrder.viewOrderProductShow = false;
+    $('.order-detail').removeClass('anim-up');
+  };
+  $('body').on('click', '.cart-pop-close', function () {
+    $('.product-order').removeClass('giikin-on');
+    $('body').removeClass('disable-scroll');
+  });
+});

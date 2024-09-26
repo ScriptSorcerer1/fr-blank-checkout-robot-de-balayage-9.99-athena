@@ -1,0 +1,32 @@
+$(function () {
+    //查询订单
+    $('#track_Order').on('click', function () {
+        window.location = 'customer/getLogisticsInfo';
+    })
+
+    $('.fixed-top i').not('.service-icon').on('click', function () {
+        if ((typeof isDetailPage != "undefined" && isDetailPage() || typeof isCheckoutPage != "undefined" && isCheckoutPage())&& typeof pageBack != "undefined" && pageBack/1 &&  typeof backHint == "function") {
+            backHint(function () { 
+                history.go(-2);
+            });
+        } else {
+            history.go(-1)
+        }
+    })
+    $('.back-home').on('click', function (e) {
+        if ((typeof isDetailPage != "undefined" && isDetailPage() || typeof isCheckoutPage != "undefined" && isCheckoutPage())&& typeof pageBack != "undefined" && pageBack/1 &&  typeof backHint == "function"){
+            var aTag = $(this).closest('a');
+            if (aTag.length && aTag.attr("href")) {
+                if (e && e.preventDefault) {
+                    e.preventDefault();
+                } else {
+                    window.event.returnValue = false;
+                }
+                backHint(function () {
+                    location.href = aTag.attr("href");
+                });
+            }
+        }
+        return;
+    })
+});

@@ -1,0 +1,494 @@
+// 使用说明（markdown表格写法）：
+// |配置形参|类型|说明|
+// |-----|----|----|
+// |opts|object|需要传的配置项|
+
+// |属性名|类型|说明|是否必填|
+// |-----|----|----|----| xz
+// |elem|string|需要引入地址插件的元素，默认为".address-wrap"|
+// |addressJson|object|返回的数据有固定的格式|必填项|
+// |num|init|可以控制下拉选项的高度||
+// |className|string|右侧icon图标类名，默认为"inverted-triangle"(倒三角)||
+// |initSp|array|输入框内的提示语，数组长度应与传入的地址数据相对应，默认为["--select a state--", "--select a city--", "--select a area--"]||
+// |alertMsg|array|当没有选择上级数据就选择下级数据的提示信息，数组长度应与传入的地址数据相对应，默认为['请先选择信息1', '请先选择信息2', '请先选择信息3', '请先选择信息4']||
+// |tips|array|左上角的提示信息，数组长度应与传入的地址数据相对应，默认为['提示信息1', '提示信息2', '提示信息3']||
+// |defineCode|array|input标签的自定义代码区，例如input的样式可以在此处添加，默认为 ['代码1', '代码2', '代码3']||
+// |initial|Bollean|是否默认选中下一个地区选项，默认为false||
+
+function addressPlugin(opts) {
+	let thFlag = false;
+	let defs = {
+		elem: '.address-wrap',
+		addressJson: {},
+		num: 4,
+		search: '',
+		className: 'inverted-triangle',
+		initSp: ['--select a state--', '--select a city--', '--select a area--', '--select a code--'],
+		alertMsg: ['请先选择信息1', '请先选择信息2', '请先选择信息3', '请先选择信息4'],
+		tips: ['提示信息1', '提示信息2', '提示信息3', '提示信息4'],
+		defineCode: ['代码1', '代码2', '代码3'],
+		place: ['代码1', '代码2', '代码34'],
+		initial: false
+	},
+		sets = $.extend({}, defs, opts),
+		rendeContent = '', // 根据json数据渲染element内容($(".address-wrap"))
+		intI = 0;
+	if ($(opts.elem).hasClass("TH")) thFlag = true;
+	for (let key in sets.addressJson) {
+		rendeContent += `<div class="item ${key} form-group item-h-bd-fz pr" data-ad="${key}">
+									<div class="select w100 h100 flex-start pr">
+										<span class="select-text form-control"></span>
+                                        <input class="select-sp form-control ${key == 'state' ? 'state-input' : ''}"  
+                                        name='${key}' type="hidden" value="${sets.initSp[intI]}" placeholder="" ${sets
+				.defineCode[intI]} nullmsg="${sets.alertMsg[intI]}"/>
+                                        <label class="form-label tip pa" data-tip="${key}">${sets.tips[
+			intI
+			]}<i class="red">*</i></label>
+                                        <div class="mark-down iconfont ${sets.className} pa"></div>
+                                    </div>
+									<div class="sublists w100 pa hide">
+										<div class="${sets.search} address-key">
+											<input class="key-li form-control " name='' data-name="${key}" type="text" value="" placeholder="${sets
+				.place[intI]}" />
+										</div>
+										<ul class="sublists-ul ${key}"></ul>	
+                                    </div>
+                                </div>`;
+		intI++;
+	}
+	$(sets.elem).html(rendeContent);
+	// 设置$(".sublists")的top值：
+	let _lengthItem = $('.item.form-group').height() - 2;
+	$('.sublists').css('top', _lengthItem);
+	// 得到json数据的key值集合和长度：
+	let arrkeysDatas = Object.keys(sets.addressJson),
+		stateDatas = sets.addressJson[arrkeysDatas[0]],
+		stateRendeLi = '',
+		arrUl = [], // 定义每一个$(".sublisits")、每一个$(".select-sp"):
+		arrSp = [],
+		arrKey = [],
+		arrLi = [];
+	for (let i = 0; i < arrkeysDatas.length; i++) {
+		arrUl.push($('.' + arrkeysDatas[i]).find('.sublists-ul'));
+		arrSp.push($('.' + arrkeysDatas[i]).find('.select-sp'));
+		arrKey.push($('.' + arrkeysDatas[i]).find('.select-text'));
+		arrLi.push($('.' + arrkeysDatas[i]).find('.key-li'));
+	}
+	// 渲染json数据的第一个属性值：
+	function stateRenderFn(stateDatas) {
+		for (let i = 0; i < stateDatas.length; i++) {
+			if (thFlag || Number(currencyId) === 38) {
+				let name = stateDatas[i].name.split("/")[0];
+				stateRendeLi += ` <li class="flex-start w100" data-id="${stateDatas[i].id}" data-name="${name}"><span>${stateDatas[i].name}</span></li>`;
+			} else {
+
+				stateRendeLi += `<li class="flex-start w100" data-id="${stateDatas[i].id}"><span>${stateDatas[i]
+					.name}</span></li>`;
+			}
+		}
+		arrUl[0].html(stateRendeLi);
+	}
+	stateRenderFn(stateDatas);
+	$(document.body).on('click', function (event) {
+		if (!$(event.target).is('.sublists , .sublists * , .select')) {
+			$('.sublists').addClass('hide');
+		}
+	});
+	// 点击选项时执行的事件：
+	$('.address-wrap .select').on('click', function (e) {
+		//香港代收点下拉框隐藏
+		$(".collect-list").hide();
+		// console.log("点击.select事件触发了");
+		// 根据tipText得到当前点击选项的下标：
+		stopPropagation(e);
+		let $_select = $(this),
+			liArr = [],
+			name = $_select.find('.select-sp').attr('name'),
+			$selectUl = $_select.next(),
+			tipText = $_select.children('.tip').data('tip'),
+			_index = arrkeysDatas.indexOf(tipText);
+		$('.sublists').addClass('hide');
+		$selectUl.removeClass('hide');
+		$selectUl.children('.key-li').val('');
+		if (_index > 0) {
+			var _id = arrSp[_index - 1].attr('data-id');
+			liArr = sets.addressJson[name][_id];
+		} else {
+			liArr = sets.addressJson[name];
+		}
+		if (typeof liArr != 'undefined') {
+			var wHtml = liArr
+				.map((item) => {
+					if (thFlag || Number(currencyId) === 38) {
+						var name = item.name.split("/")[0];
+						return `<li class="flex-start w100" data-id="${item.id}" data-name="${name}"><span>${item.name}</span></li>`;
+					} else {
+						return `<li class="flex-start w100" data-id="${item.id}"><span>${item.name}</span></li>`;
+					}
+				})
+				.join('');
+		}
+		if (wHtml) {
+			arrUl[_index].html(wHtml);
+		}
+		limitH($selectUl, sets.num);
+		// 限制下拉框的高度：
+		function limitH(el, num) {
+			let _lengthsublists = el.children().length + el.find('ul').children().length;
+			if (_lengthsublists) {
+				let _height = el.children().css('height').slice(0, -2);
+				let itemHeight = el.find('ul').children().length ? el.find('ul').children().eq(0).css('height').slice(0, -2) : 40;
+				let minHeight = (_height == 0 ? '220px' : itemHeight * num + 'px');
+				if (_lengthsublists > num) {
+					el.css({
+						height: minHeight,
+						'overflow-y': 'scroll'
+					});
+				} else {
+					el.css({
+						height: 'auto',
+						overflow: 'auto'
+					});
+				}
+			} else {
+				el.css({
+					height: 'auto',
+					overflow: 'auto'
+				});
+			}
+		}
+
+		// oninput事件：
+		arrLi[_index].on('keyup', function () {
+			// console.log("change事件触发了");
+			let _iptVal = $(this).val().trim(),
+				name = $(this).attr('data-name'),
+				liArr = sets.addressJson[name],
+				liDate = [];
+			console.log(_iptVal);
+			if (_index > 0) {
+				let key = $(".tip[data-tip='" + arrkeysDatas[_index - 1] + "']").siblings('.select-sp').attr('data-id');
+				liArr = liArr[key];
+			}
+
+			arrUl[_index].html('');
+			if (_iptVal) {
+				// $.each(liArr, function (i, v) {
+				liArr.forEach((v) => {
+					if (v.name.toLowerCase().indexOf(_iptVal.toLowerCase()) != -1) {
+						liDate.push(v);
+					}
+				});
+				wHtml = liDate
+					.map((item) => {
+						if (thFlag || Number(currencyId) === 38) {
+							var name = item.name.split("/")[0];
+							return `<li class="flex-start w100" data-id="${item.id}" data-name="${name}"><span>${item.name}</span></li>`;
+						} else {
+							return `<li class="flex-start w100" data-id="${item.id}"><span>${item.name}</span></li>`;
+						}
+					})
+					.join('');
+				arrUl[_index].html(wHtml);
+			} else if (_index == 0) {
+				arrUl[_index].html(stateRendeLi);
+			} else {
+				let preIptVal = arrSp[_index - 1].val(),
+					preLiArr = arrUl[_index - 1].children(),
+					w$li = preLiArr.each((index, item) => {
+						return $(item).text() === preIptVal;
+					}),
+					wId = w$li.data('id'),
+					wDatas = sets.addressJson[arrkeysDatas[_index]][wId],
+					wHtml = wDatas
+						.map((item) => {
+							if (thFlag || Number(currencyId) === 38) {
+								var name = item.name.split("/")[0];
+								return `<li class="flex-start w100" data-id="${item.id}" data-name="${name}"><span>${item.name}</span></li>`;
+							} else {
+								return `<li class="flex-start w100" data-id="${item.id}"><span>${item.name}</span></li>`;
+							}
+						})
+						.join('');
+				arrUl[_index].html(wHtml);
+			}
+
+			limitH($selectUl, sets.num);
+			return false;
+		});
+		// 当没有选择第一级就选择第二级时，提示先选择上一级：
+		if (
+			_index >= 1 &&
+			arrSp[_index - 1].attr('placeholder') == sets.initSp[_index - 1] &&
+			!arrSp[_index - 1].val()
+		) {
+			toast(sets.alertMsg[_index - 1]);
+			$('.sublists').addClass('hide');
+		} else {
+			limitH($selectUl, sets.num);
+			// 阻止冒泡及默认事件：
+			return false;
+		}
+	});
+	$('body').on('click', '.sublists .sublists-ul li', function () {
+		let curAd = $(this).closest('.item').attr('data-ad');
+		let _index = arrkeysDatas.findIndex(v => v == curAd);
+		let renderParent = arrUl[_index + 1];
+		let res = sets.addressJson[arrkeysDatas[_index + 1]];
+		let _parent = $(this).closest('.item');
+		_parent.addClass('form-group-label');
+		let $_li = $(this);
+		let _val = $_li.children().text()
+		let _id = $_li.data('id');
+		// 当前点击的项目不是最后json数据的最后一条：
+		if (_index != arrkeysDatas.length - 1) {
+			let _Datas = res[_id] || [],
+				rendeLi = '';
+			for (let i = 0; i < _Datas.length; i++) {
+				if (thFlag || Number(currencyId) === 38) {
+					let name = _Datas[i].name.split("/")[0];
+					rendeLi += ` <li class="flex-start w100" data-id="${_Datas[i].id}" data-name="${name}"><span>${_Datas[i].name}</span></li>`;
+				} else {
+					rendeLi += ` <li class="flex-start w100" data-id="${_Datas[i].id}"><span>${_Datas[i].name}</span></li>`;
+				}
+
+			}
+			renderParent.html(rendeLi);
+		}
+		// 当前$(".sublists")隐藏：
+		$_li.closest('.sublists').addClass('hide');
+		// 将选中内容在$(".select-sp")中显示，同时显示提示信息：
+		_parent.find('.select-text').text(_val);
+		if (thFlag) {
+			_val = $_li.attr("data-name");
+		}
+		_parent.find('.select-sp').attr('value', _val).attr('data-id', _id).trigger('blur').trigger('change');
+
+		// 同时从当前下标+1开始的选项设为初始值：
+		for (let i = _index + 1; i < arrSp.length; i++) {
+			arrSp[i].attr('placeholder', sets.initSp[i]);
+			arrSp[i].val(sets.initSp[i]);
+		}
+		// 根据当前input值初始化下一级的input值
+		if (sets.initial) {
+			if (_index != arrkeysDatas.length - 1) {
+				$(this).closest('.item').next('.item').addClass('form-group-label');
+				let curId = _id,
+					_initVal = sets.addressJson[arrkeysDatas[_index + 1]][curId][0].name;
+				arrSp[_index + 1].attr('placeholder', _initVal).attr('value', _initVal).trigger('change');
+				arrKey[_index + 1].text(_initVal);
+			}
+		} else {
+			if (_index != arrkeysDatas.length - 1) {
+				let nextAll = $(this).closest('.item').nextAll();
+				nextAll.removeClass('form-group-label');
+				nextAll
+					.find('.select-text')
+					.attr('placeholder', '')
+					.attr('value', '')
+					.html('')
+					.trigger('change');
+				nextAll.find('.select-sp').text('').trigger('blur').trigger('change');
+			}
+		}
+	});
+	window.updateAds = function (data, name, newVal, parent) {
+		sets.addressJson = data;
+		if (parent.parent) {
+			var value = $('input[name="' + parent.parent + '"]').val();
+			$('.item.' + parent.parent).find('.sublists-ul li').each(function () {
+				if ($(this).text() === value) {
+					$(this).click();
+					return false;
+				}
+			})
+		} else {
+			stateRenderFn(stateDatas);
+		}
+		$('.item.' + name).find('.sublists-ul li').each(function () {
+			if ($(this).text() === newVal) {
+				$(this).click();
+				return false;
+			}
+		})
+	}
+
+	function stopPropagation(e) {
+		if (e.stopPropagation)
+			e.stopPropagation(); //停止冒泡   非ie
+		else e.cancelBubble = true; //停止冒泡  ie
+	}
+}
+
+$(function () {
+	var addressDetails = store.get('adddress_detail');
+	if ((typeof addressEcho !== 'undefined' && Number(addressEcho) || typeof isNewAddressForm !== 'undefined' && Number(isNewAddressForm)) && addressDetails && addressDetails.currencyId == currencyId && addressDetails.marketId == marketId) {
+		setTimeout(function () {
+			renderAddress(addressDetails.data);
+		})
+	}
+});
+
+(function () {
+	//回显地址
+	window.renderAddress = function (data) {
+		Object.keys(data).forEach(v => {
+			if (v === 'chaoshangId' && !$('[name="chaoshangId"]').size()) {
+				var chaoshangIdIpt = $('<input type="hidden" name="chaoshangId">');
+				$('[name="address"]').parents('.form-address-item').after(chaoshangIdIpt);
+			}
+			var type = $('[name="' + v + '"]').attr('type');
+			var value = data[v];
+			if (v === 'notes' || !value) {
+				return;
+			}
+			if( Number(currencyId) === 13 && (v==='management_office_collection' || v === 'delivery_period' || v === 'distribution_logistics')) {
+        return;
+      }
+		
+			if ((v === 'state' || v === 'city' || v === 'zone') && $('[name="' + v + '"]').prop('nodeName') === 'SELECT') {
+				if (v === 'city') {
+					setTimeout(function () {
+						touchClick($('[name="' + v + '"]'), value);
+						$('[name="city"]').trigger('change');
+					});
+				} else {
+					touchClick($('[name="' + v + '"]'), value);
+					$('[name="state"]').trigger('change');
+				}
+			} else if (type === 'radio') {
+				$('[name="' + v + '"]').each(function () {
+					var val = $(this).val();
+					if (val == value) {
+						$(this).prop('checked', true);
+						if (!([6, 13].includes(Number(currencyId)) || typeof isNewAddressForm !== 'undefined' && Number(isNewAddressForm))) {
+							$(this).trigger('change')
+						}
+						return false;
+					}
+				});
+			} else if (type === 'checkbox') {
+				$('[name="' + v + '"]').attr('checked', value).trigger('change');
+			} else {
+				var newVal = value;
+				if (v === 'address') {
+					newVal = detailAddressFormat(data, value)
+				}
+				if($('[name="' + v + '"]').length > 1) {
+					return;
+				}
+				$('[name="' + v + '"]')
+					.val(newVal)
+					.blur()
+					.trigger('change')
+					.parent('.form-group')
+					.addClass('form-group-label');
+				adsLinkageEchoInp(v, value);
+				var renderList = ['.' + v + '-list', '.area-list-container', '.' + v + '-list-container'];
+				renderList.forEach(render_item => {
+					if ([49, 22, 27, 28].includes(Number(currencyId)) && $('body').width() < 576 && $('.linkage-toast .' + v + '-list').length) {
+						adsLinkageEcho(v, $('.linkage-toast .' + v + '-list'), value)
+					} else if ($('[name="' + v + '"]').parents('.form-group').find(render_item).length) {
+						adsLinkageEcho(v, $('[name="' + v + '"]').parents('.form-group').find(render_item), value)
+					}
+				})
+				if ($('[name="' + v + '"]').parents('.' + v).length) {
+					if (Number(currencyId) === 38 && v === 'city') {
+						setTimeout(function () {
+							pluginAdsRender(v, value);
+						}, 100)
+					} else {
+						pluginAdsRender(v, value);
+					}
+				}
+				if (Number(currencyId) === 16 && v === 'zone') {
+					pluginAdsRender('zip_code', data['zip_code']);
+				}
+			}
+		})
+	}
+	// 省市赋值
+	function touchClick(data, name) {
+		var newData = data.children();
+		for (var index = 0; index < newData.length; index++) {
+			const element = newData[index];
+			var val = element.text;
+			if (val && val.toUpperCase().indexOf(name.toUpperCase()) > -1) {
+				element.selected = true;
+				break;
+			}
+		}
+	}
+	// 使用【addressPlugin】插件渲染的省市区邮编处理
+	function pluginAdsRender(name, value) {
+		$('[name="' + name + '"]').parents('.' + name).find('.sublists-ul li').each(function () {
+			var val = $(this).find('span').html();
+		
+			if (Number(currencyId) === 16 || Number(currencyId) === 38) {
+				// 泰铢去泰语部分对比
+				val = $(this).attr('data-name');
+			}
+			if (val == value) {
+				$('[name="' + name + '"]')
+				.siblings('.select-text')
+				.html(val);
+				if (Number(currencyId) === 16 || Number(currencyId) === 38) {
+					// 泰铢去泰语部分对比
+					val = $(this).attr('data-name');
+					$('[name="' + name + '"]').siblings('.selected-value').text($(this).text());
+				}
+				$(this).click();
+				return false;
+			}
+		});
+	}
+	// 省市区回显联动
+	function adsLinkageEcho(name, ergodicElement, value) {
+		ergodicElement.find('li').each(function () {
+			var val = $(this).html();
+			var enVal = $(this).attr('data-value');
+			if (val === value || enVal && enVal === value) {
+				adsLinkageEchoInp(name, val === value ? val : enVal);
+			}
+			if ([1, 34].includes(Number(currencyId))) {
+				val = $(this).attr('data-value');
+			}
+			if (val === value || enVal && enVal === value) {
+				$(this).click();
+				return false;
+			}
+		});
+	}
+
+	function adsLinkageEchoInp(name, value) {
+		var renderVal = ['.selected-value', '.selected-value-' + name];
+		renderVal.forEach(render_item => {
+			if ($('[name="' + name + '"]').parents('.form-group').find(render_item).length) {
+				$('[name="' + name + '"]')
+					.parents('.form-group')
+					.find(render_item)
+					.html(value);
+			}
+		})
+	}
+
+	// 详情地址特殊处理
+	function detailAddressFormat(data, value) {
+		var newVal = value;
+		if ([6, 13, 29].includes(Number(currencyId))) {
+			newVal = value.replace(data.building, '');
+			if ($('.collect-list').length) {
+				$('.collect-list li').each(function () {
+					var itemText = $(this).text();
+					if (itemText === newVal) {
+						$(this).addClass('active');
+						return false;
+					}
+				})
+			}
+		}
+		return newVal;
+	};
+	$('#custInfoForm').attr('autocomplete', 'off');
+})()
+

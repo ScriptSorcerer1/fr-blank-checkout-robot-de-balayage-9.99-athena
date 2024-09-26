@@ -1,0 +1,151 @@
+reDefine([], function () {
+  let isPendding = false;
+  function getComment(params, cb, isNew = false, format = false, failCb = () => { }) {
+    if (location.hostname === 'preview.giikin.cn') {
+      isNew ? getAppraise(params, cb) : getGAppraises(params, cb);
+      return;
+    }
+    if (isNew) {
+      let productComment = store.get('product_new_comment_' + params.saleId);
+      productComment ? format ? cb(runNewAppraise(productComment)) : cb(productComment) : getAppraise(params, cb, format, failCb);
+    } else {
+      let productComment = store.get('product_comment' + params);
+      productComment ? cb(productComment) : getGAppraises(params, cb, failCb);
+    }
+  }
+  function getGAppraises(id, cb, failCb) {
+    var storeName = 'product_comment' + id;
+    var resData = store.get(storeName);
+    if (resData && resData.data) {
+      cb(resData);
+      return;
+    }
+    if (isPendding && location.hostname !== 'preview.giikin.cn') {
+      var timer = setInterval(function () {
+        var res = store.get(storeName);
+        if (res) {
+          clearInterval(timer);
+          cb(res);
+        }
+      }, 300);
+    } else {
+      isPendding = true;
+      customerApi
+        .getGAppraises({ id, limitNum: 1000 })
+        .then(res => {
+          if (res.status == 'success') {
+            let data = res.data;
+            if (location.hostname === 'preview.giikin.cn') {
+              cb(data);
+              return;
+            }
+            if (data && data.lists.length > 0) {
+              // 评论数据村本地2小时
+              store.set('product_comment' + id, data, 60 * 60 * 2);
+            } else {
+              // 没有评论存本地五分钟【防止页面同时发送请求】
+              store.set('product_comment' + id, data, 60 * 5);
+            }
+            cb(data);
+          }
+        })
+        .catch(err => {
+          console.log(err);
+          failCb(err);
+        });
+    }
+  }
+  function getAppraise(params, cb, format, failCb) {
+    var storeName = 'product_new_comment_' + params.saleId;
+    var resData = store.get(storeName);
+    if (resData && resData.data) {
+      format ? cb(runNewAppraise(resData)) : cb(resData);
+      return;
+    }
+    if (isPendding && location.hostname !== 'preview.giikin.cn') {
+      var timer = setInterval(function () {
+        var res = store.get(storeName);
+        if (res) {
+          clearInterval(timer);
+          format ? cb(runNewAppraise(res)) : cb(res);
+        }
+      }, 300);
+    } else {
+      isPendding = true;
+      getNewAppraise(params)
+        .then(res => {
+          if (location.hostname === 'preview.giikin.cn') {
+            cb(res);
+            return;
+          }
+          if (res && res.lists.length > 0) {
+            store.set('product_new_comment_' + params.saleId, res, 3600 * 2);
+          } else {
+            store.set('product_new_comment_' + params.saleId, res, 60 * 5);
+          }
+          format ? cb(runNewAppraise(res)) : cb(res);
+        })
+        .catch(err => {
+          console.log(err);
+          failCb(err)
+        });
+    }
+  }
+  function runNewAppraise(res) {
+    if (res.lists.length == 0) {
+      return;
+    }
+    var newLists = res.lists;
+    var batchOneList = newLists.filter(item => item.batch == 1);
+    var batchTwoList = newLists.filter(item => item.batch == 2);
+    var batchThreeList = newLists.filter(item => item.batch == 3);
+    var listOne = batchOneData(res.day);
+    if (res.day == 1) {
+      newLists = listOne;
+    } else if (res.day == 2) {
+      var today = new Date();
+      batchTwoList.forEach(function (item) {
+        item.fake_date = item.create_time = item.adate = formatDate(today);
+      });
+      newLists = [...listOne, ...batchTwoList];
+    } else {
+      batchTwoList.forEach(function (item) {
+        item.fake_date = item.create_time = item.adate = formatDate(new Date().setDate(new Date().getDate() - 1));
+      });
+
+      var today = new Date();
+      batchThreeList.forEach(function (item) {
+        item.fake_date = item.create_time = item.adate = formatDate(today);
+      });
+      newlists = [...listOne, ...batchTwoList, ...batchThreeList];
+    }
+    newLists = newLists.sort((a, b) => new Date(a.fake_date).getTime() - new Date(b.fake_date).getTime());
+    newLists = newLists.map(v => { v.imgs = v.imgs || []; return v; });
+    var hasImg = newLists.filter(v => v.imgs.length);
+    var noImg = newLists.filter(v => !v.imgs.length);
+    newLists = hasImg.concat(noImg);
+    newLists = newLists.map(v => {
+      v.imgs.length ? v.is_top = 1 : v.is_top = 0;
+      return v;
+    })
+    res.lists = newLists;
+
+    //day 1 数据处理
+    function batchOneData(day) {
+      var dateArr = [];
+      for (let i = 0; i < 7; i++) {
+        var previousDate = new Date();
+        previousDate.setDate(previousDate.getDate() - i - (day - 1));
+        dateArr.push(formatDate(previousDate));
+      }
+
+      batchOneList.forEach(function (item, index) {
+        item.fake_date = item.create_time = item.adate = dateArr[index % 7];
+      });
+      return batchOneList;
+    };
+
+    return res;
+  }
+  return getComment;
+});

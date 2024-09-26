@@ -1,0 +1,1 @@
+"use strict";!function(){var o=store.get("sinfo");o=o&&JSON.parse(o),isMultiCurrency?App.promotion({lang:cartLang,saleId:o?o.id:"",symbolBefore:1===Number(currencyPos),symbol:symbol,hotStyle:0,sgks:1}):App.promotion({lang:cartLang,saleId:o?o.id:"",symbolBefore:1===Number(currencyPos),symbol:symbol,hotStyle:0})}();

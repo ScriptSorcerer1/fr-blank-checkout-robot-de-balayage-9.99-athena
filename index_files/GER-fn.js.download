@@ -1,0 +1,1664 @@
+//意大利的不可派送邮编
+var notDeliveryZipList = [
+    {
+        "zip": "04027"
+    },
+    {
+        "zip": "04031"
+    },
+    {
+        "zip": "05010"
+    },
+    {
+        "zip": "05011"
+    },
+    {
+        "zip": "05016"
+    },
+    {
+        "zip": "06010"
+    },
+    {
+        "zip": "06014"
+    },
+    {
+        "zip": "06021"
+    },
+    {
+        "zip": "06025"
+    },
+    {
+        "zip": "06026"
+    },
+    {
+        "zip": "06027"
+    },
+    {
+        "zip": "06029"
+    },
+    {
+        "zip": "06030"
+    },
+    {
+        "zip": "06040"
+    },
+    {
+        "zip": "06041"
+    },
+    {
+        "zip": "06043"
+    },
+    {
+        "zip": "06046"
+    },
+    {
+        "zip": "06060"
+    },
+    {
+        "zip": "06066"
+    },
+    {
+        "zip": "06069"
+    },
+    {
+        "zip": "07010"
+    },
+    {
+        "zip": "07011"
+    },
+    {
+        "zip": "07012"
+    },
+    {
+        "zip": "07013"
+    },
+    {
+        "zip": "07014"
+    },
+    {
+        "zip": "07015"
+    },
+    {
+        "zip": "07016"
+    },
+    {
+        "zip": "07017"
+    },
+    {
+        "zip": "07018"
+    },
+    {
+        "zip": "07022"
+    },
+    {
+        "zip": "07023"
+    },
+    {
+        "zip": "07024"
+    },
+    {
+        "zip": "07025"
+    },
+    {
+        "zip": "07027"
+    },
+    {
+        "zip": "07030"
+    },
+    {
+        "zip": "07033"
+    },
+    {
+        "zip": "07035"
+    },
+    {
+        "zip": "07038"
+    },
+    {
+        "zip": "07040"
+    },
+    {
+        "zip": "07043"
+    },
+    {
+        "zip": "07046"
+    },
+    {
+        "zip": "07048"
+    },
+    {
+        "zip": "08010"
+    },
+    {
+        "zip": "08011"
+    },
+    {
+        "zip": "08012"
+    },
+    {
+        "zip": "08018"
+    },
+    {
+        "zip": "08020"
+    },
+    {
+        "zip": "08021"
+    },
+    {
+        "zip": "08022"
+    },
+    {
+        "zip": "08023"
+    },
+    {
+        "zip": "08024"
+    },
+    {
+        "zip": "08026"
+    },
+    {
+        "zip": "08027"
+    },
+    {
+        "zip": "08028"
+    },
+    {
+        "zip": "08030"
+    },
+    {
+        "zip": "08031"
+    },
+    {
+        "zip": "08032"
+    },
+    {
+        "zip": "08036"
+    },
+    {
+        "zip": "08038"
+    },
+    {
+        "zip": "08040"
+    },
+    {
+        "zip": "08042"
+    },
+    {
+        "zip": "08044"
+    },
+    {
+        "zip": "08045"
+    },
+    {
+        "zip": "08046"
+    },
+    {
+        "zip": "08047"
+    },
+    {
+        "zip": "08049"
+    },
+    {
+        "zip": "09014"
+    },
+    {
+        "zip": "09017"
+    },
+    {
+        "zip": "09019"
+    },
+    {
+        "zip": "09029"
+    },
+    {
+        "zip": "09031"
+    },
+    {
+        "zip": "09051"
+    },
+    {
+        "zip": "09053"
+    },
+    {
+        "zip": "09054"
+    },
+    {
+        "zip": "09055"
+    },
+    {
+        "zip": "09058"
+    },
+    {
+        "zip": "09059"
+    },
+    {
+        "zip": "09061"
+    },
+    {
+        "zip": "09062"
+    },
+    {
+        "zip": "09063"
+    },
+    {
+        "zip": "09064"
+    },
+    {
+        "zip": "09065"
+    },
+    {
+        "zip": "09066"
+    },
+    {
+        "zip": "09073"
+    },
+    {
+        "zip": "09075"
+    },
+    {
+        "zip": "09076"
+    },
+    {
+        "zip": "09078"
+    },
+    {
+        "zip": "09079"
+    },
+    {
+        "zip": "09080"
+    },
+    {
+        "zip": "09082"
+    },
+    {
+        "zip": "09083"
+    },
+    {
+        "zip": "09084"
+    },
+    {
+        "zip": "09085"
+    },
+    {
+        "zip": "09086"
+    },
+    {
+        "zip": "09090"
+    },
+    {
+        "zip": "10052"
+    },
+    {
+        "zip": "10054"
+    },
+    {
+        "zip": "10056"
+    },
+    {
+        "zip": "10058"
+    },
+    {
+        "zip": "10080"
+    },
+    {
+        "zip": "12013"
+    },
+    {
+        "zip": "12014"
+    },
+    {
+        "zip": "12015"
+    },
+    {
+        "zip": "12021"
+    },
+    {
+        "zip": "12027"
+    },
+    {
+        "zip": "12028"
+    },
+    {
+        "zip": "12029"
+    },
+    {
+        "zip": "12034"
+    },
+    {
+        "zip": "12070"
+    },
+    {
+        "zip": "12071"
+    },
+    {
+        "zip": "12072"
+    },
+    {
+        "zip": "12074"
+    },
+    {
+        "zip": "12075"
+    },
+    {
+        "zip": "12077"
+    },
+    {
+        "zip": "12078"
+    },
+    {
+        "zip": "12082"
+    },
+    {
+        "zip": "12083"
+    },
+    {
+        "zip": "12087"
+    },
+    {
+        "zip": "12088"
+    },
+    {
+        "zip": "13010"
+    },
+    {
+        "zip": "13020"
+    },
+    {
+        "zip": "13021"
+    },
+    {
+        "zip": "13022"
+    },
+    {
+        "zip": "13023"
+    },
+    {
+        "zip": "13024"
+    },
+    {
+        "zip": "13025"
+    },
+    {
+        "zip": "13026"
+    },
+    {
+        "zip": "13028"
+    },
+    {
+        "zip": "13030"
+    },
+    {
+        "zip": "13033"
+    },
+    {
+        "zip": "13036"
+    },
+    {
+        "zip": "13812"
+    },
+    {
+        "zip": "13815"
+    },
+    {
+        "zip": "13821"
+    },
+    {
+        "zip": "13861"
+    },
+    {
+        "zip": "13865"
+    },
+    {
+        "zip": "13877"
+    },
+    {
+        "zip": "13884"
+    },
+    {
+        "zip": "13888"
+    },
+    {
+        "zip": "14050"
+    },
+    {
+        "zip": "16017"
+    },
+    {
+        "zip": "16020"
+    },
+    {
+        "zip": "16023"
+    },
+    {
+        "zip": "16025"
+    },
+    {
+        "zip": "16027"
+    },
+    {
+        "zip": "16028"
+    },
+    {
+        "zip": "16029"
+    },
+    {
+        "zip": "16041"
+    },
+    {
+        "zip": "16045"
+    },
+    {
+        "zip": "16046"
+    },
+    {
+        "zip": "16048"
+    },
+    {
+        "zip": "16049"
+    },
+    {
+        "zip": "17010"
+    },
+    {
+        "zip": "17013"
+    },
+    {
+        "zip": "17030"
+    },
+    {
+        "zip": "17032"
+    },
+    {
+        "zip": "17033"
+    },
+    {
+        "zip": "17034"
+    },
+    {
+        "zip": "17037"
+    },
+    {
+        "zip": "17039"
+    },
+    {
+        "zip": "17040"
+    },
+    {
+        "zip": "17042"
+    },
+    {
+        "zip": "17044"
+    },
+    {
+        "zip": "17045"
+    },
+    {
+        "zip": "17046"
+    },
+    {
+        "zip": "17048"
+    },
+    {
+        "zip": "17057"
+    },
+    {
+        "zip": "17058"
+    },
+    {
+        "zip": "18025"
+    },
+    {
+        "zip": "19010"
+    },
+    {
+        "zip": "19012"
+    },
+    {
+        "zip": "19013"
+    },
+    {
+        "zip": "19014"
+    },
+    {
+        "zip": "19020"
+    },
+    {
+        "zip": "19025"
+    },
+    {
+        "zip": "19028"
+    },
+    {
+        "zip": "21010"
+    },
+    {
+        "zip": "22024"
+    },
+    {
+        "zip": "23010"
+    },
+    {
+        "zip": "23020"
+    },
+    {
+        "zip": "23021"
+    },
+    {
+        "zip": "23023"
+    },
+    {
+        "zip": "23024"
+    },
+    {
+        "zip": "23025"
+    },
+    {
+        "zip": "23026"
+    },
+    {
+        "zip": "23030"
+    },
+    {
+        "zip": "23033"
+    },
+    {
+        "zip": "23035"
+    },
+    {
+        "zip": "23038"
+    },
+    {
+        "zip": "23817"
+    },
+    {
+        "zip": "23831"
+    },
+    {
+        "zip": "23832"
+    },
+    {
+        "zip": "23835"
+    },
+    {
+        "zip": "23836"
+    },
+    {
+        "zip": "23838"
+    },
+    {
+        "zip": "24013"
+    },
+    {
+        "zip": "25056"
+    },
+    {
+        "zip": "25072"
+    },
+    {
+        "zip": "25078"
+    },
+    {
+        "zip": "25084"
+    },
+    {
+        "zip": "27059"
+    },
+    {
+        "zip": "29021"
+    },
+    {
+        "zip": "29022"
+    },
+    {
+        "zip": "29023"
+    },
+    {
+        "zip": "29024"
+    },
+    {
+        "zip": "29026"
+    },
+    {
+        "zip": "32010"
+    },
+    {
+        "zip": "32012"
+    },
+    {
+        "zip": "32014"
+    },
+    {
+        "zip": "32023"
+    },
+    {
+        "zip": "32028"
+    },
+    {
+        "zip": "32030"
+    },
+    {
+        "zip": "32033"
+    },
+    {
+        "zip": "32041"
+    },
+    {
+        "zip": "32043"
+    },
+    {
+        "zip": "33018"
+    },
+    {
+        "zip": "33020"
+    },
+    {
+        "zip": "33021"
+    },
+    {
+        "zip": "33023"
+    },
+    {
+        "zip": "33025"
+    },
+    {
+        "zip": "33026"
+    },
+    {
+        "zip": "33027"
+    },
+    {
+        "zip": "33029"
+    },
+    {
+        "zip": "33080"
+    },
+    {
+        "zip": "33090"
+    },
+    {
+        "zip": "33099"
+    },
+    {
+        "zip": "36032"
+    },
+    {
+        "zip": "36052"
+    },
+    {
+        "zip": "38035"
+    },
+    {
+        "zip": "38037"
+    },
+    {
+        "zip": "38053"
+    },
+    {
+        "zip": "38054"
+    },
+    {
+        "zip": "38055"
+    },
+    {
+        "zip": "38070"
+    },
+    {
+        "zip": "38071"
+    },
+    {
+        "zip": "38077"
+    },
+    {
+        "zip": "38078"
+    },
+    {
+        "zip": "38080"
+    },
+    {
+        "zip": "38086"
+    },
+    {
+        "zip": "38089"
+    },
+    {
+        "zip": "39027"
+    },
+    {
+        "zip": "39032"
+    },
+    {
+        "zip": "39033"
+    },
+    {
+        "zip": "39037"
+    },
+    {
+        "zip": "39058"
+    },
+    {
+        "zip": "40022"
+    },
+    {
+        "zip": "40032"
+    },
+    {
+        "zip": "40041"
+    },
+    {
+        "zip": "40042"
+    },
+    {
+        "zip": "40048"
+    },
+    {
+        "zip": "41020"
+    },
+    {
+        "zip": "41021"
+    },
+    {
+        "zip": "41022"
+    },
+    {
+        "zip": "41025"
+    },
+    {
+        "zip": "41027"
+    },
+    {
+        "zip": "41040"
+    },
+    {
+        "zip": "41044"
+    },
+    {
+        "zip": "41046"
+    },
+    {
+        "zip": "41052"
+    },
+    {
+        "zip": "41055"
+    },
+    {
+        "zip": "41059"
+    },
+    {
+        "zip": "42032"
+    },
+    {
+        "zip": "42035"
+    },
+    {
+        "zip": "43021"
+    },
+    {
+        "zip": "43024"
+    },
+    {
+        "zip": "43025"
+    },
+    {
+        "zip": "43028"
+    },
+    {
+        "zip": "43030"
+    },
+    {
+        "zip": "43032"
+    },
+    {
+        "zip": "43040"
+    },
+    {
+        "zip": "43041"
+    },
+    {
+        "zip": "43042"
+    },
+    {
+        "zip": "43046"
+    },
+    {
+        "zip": "43047"
+    },
+    {
+        "zip": "43049"
+    },
+    {
+        "zip": "43050"
+    },
+    {
+        "zip": "43051"
+    },
+    {
+        "zip": "43053"
+    },
+    {
+        "zip": "43059"
+    },
+    {
+        "zip": "44037"
+    },
+    {
+        "zip": "45010"
+    },
+    {
+        "zip": "45018"
+    },
+    {
+        "zip": "47010"
+    },
+    {
+        "zip": "47012"
+    },
+    {
+        "zip": "47017"
+    },
+    {
+        "zip": "47018"
+    },
+    {
+        "zip": "47019"
+    },
+    {
+        "zip": "47021"
+    },
+    {
+        "zip": "47027"
+    },
+    {
+        "zip": "47028"
+    },
+    {
+        "zip": "47861"
+    },
+    {
+        "zip": "47862"
+    },
+    {
+        "zip": "47866"
+    },
+    {
+        "zip": "48032"
+    },
+    {
+        "zip": "50033"
+    },
+    {
+        "zip": "52018"
+    },
+    {
+        "zip": "52032"
+    },
+    {
+        "zip": "52033"
+    },
+    {
+        "zip": "52036"
+    },
+    {
+        "zip": "52038"
+    },
+    {
+        "zip": "55020"
+    },
+    {
+        "zip": "55021"
+    },
+    {
+        "zip": "55022"
+    },
+    {
+        "zip": "56040"
+    },
+    {
+        "zip": "56041"
+    },
+    {
+        "zip": "56044"
+    },
+    {
+        "zip": "56045"
+    },
+    {
+        "zip": "57030"
+    },
+    {
+        "zip": "57031"
+    },
+    {
+        "zip": "57032"
+    },
+    {
+        "zip": "57033"
+    },
+    {
+        "zip": "57034"
+    },
+    {
+        "zip": "57036"
+    },
+    {
+        "zip": "57037"
+    },
+    {
+        "zip": "57038"
+    },
+    {
+        "zip": "58010"
+    },
+    {
+        "zip": "58012"
+    },
+    {
+        "zip": "58014"
+    },
+    {
+        "zip": "58017"
+    },
+    {
+        "zip": "58027"
+    },
+    {
+        "zip": "58034"
+    },
+    {
+        "zip": "58036"
+    },
+    {
+        "zip": "58042"
+    },
+    {
+        "zip": "58044"
+    },
+    {
+        "zip": "58045"
+    },
+    {
+        "zip": "58055"
+    },
+    {
+        "zip": "59025"
+    },
+    {
+        "zip": "61014"
+    },
+    {
+        "zip": "61042"
+    },
+    {
+        "zip": "61043"
+    },
+    {
+        "zip": "61044"
+    },
+    {
+        "zip": "61046"
+    },
+    {
+        "zip": "64030"
+    },
+    {
+        "zip": "64035"
+    },
+    {
+        "zip": "66015"
+    },
+    {
+        "zip": "66017"
+    },
+    {
+        "zip": "66018"
+    },
+    {
+        "zip": "66019"
+    },
+    {
+        "zip": "66040"
+    },
+    {
+        "zip": "67030"
+    },
+    {
+        "zip": "67032"
+    },
+    {
+        "zip": "67046"
+    },
+    {
+        "zip": "67050"
+    },
+    {
+        "zip": "67055"
+    },
+    {
+        "zip": "71020"
+    },
+    {
+        "zip": "71022"
+    },
+    {
+        "zip": "71024"
+    },
+    {
+        "zip": "71027"
+    },
+    {
+        "zip": "71028"
+    },
+    {
+        "zip": "71031"
+    },
+    {
+        "zip": "71032"
+    },
+    {
+        "zip": "71033"
+    },
+    {
+        "zip": "71034"
+    },
+    {
+        "zip": "71035"
+    },
+    {
+        "zip": "71038"
+    },
+    {
+        "zip": "71039"
+    },
+    {
+        "zip": "71051"
+    },
+    {
+        "zip": "75010"
+    },
+    {
+        "zip": "75011"
+    },
+    {
+        "zip": "75016"
+    },
+    {
+        "zip": "75017"
+    },
+    {
+        "zip": "75018"
+    },
+    {
+        "zip": "75019"
+    },
+    {
+        "zip": "75021"
+    },
+    {
+        "zip": "75022"
+    },
+    {
+        "zip": "75026"
+    },
+    {
+        "zip": "75027"
+    },
+    {
+        "zip": "75028"
+    },
+    {
+        "zip": "80071"
+    },
+    {
+        "zip": "80072"
+    },
+    {
+        "zip": "80073"
+    },
+    {
+        "zip": "80074"
+    },
+    {
+        "zip": "80075"
+    },
+    {
+        "zip": "80076"
+    },
+    {
+        "zip": "80077"
+    },
+    {
+        "zip": "80079"
+    },
+    {
+        "zip": "80081"
+    },
+    {
+        "zip": "82022"
+    },
+    {
+        "zip": "82023"
+    },
+    {
+        "zip": "82024"
+    },
+    {
+        "zip": "82025"
+    },
+    {
+        "zip": "82028"
+    },
+    {
+        "zip": "83041"
+    },
+    {
+        "zip": "83044"
+    },
+    {
+        "zip": "83046"
+    },
+    {
+        "zip": "83049"
+    },
+    {
+        "zip": "84021"
+    },
+    {
+        "zip": "84023"
+    },
+    {
+        "zip": "84027"
+    },
+    {
+        "zip": "84030"
+    },
+    {
+        "zip": "84050"
+    },
+    {
+        "zip": "84053"
+    },
+    {
+        "zip": "84055"
+    },
+    {
+        "zip": "85010"
+    },
+    {
+        "zip": "85011"
+    },
+    {
+        "zip": "85012"
+    },
+    {
+        "zip": "85013"
+    },
+    {
+        "zip": "85014"
+    },
+    {
+        "zip": "85017"
+    },
+    {
+        "zip": "85018"
+    },
+    {
+        "zip": "85020"
+    },
+    {
+        "zip": "85023"
+    },
+    {
+        "zip": "85026"
+    },
+    {
+        "zip": "85030"
+    },
+    {
+        "zip": "85031"
+    },
+    {
+        "zip": "85032"
+    },
+    {
+        "zip": "85034"
+    },
+    {
+        "zip": "85035"
+    },
+    {
+        "zip": "85036"
+    },
+    {
+        "zip": "85039"
+    },
+    {
+        "zip": "85040"
+    },
+    {
+        "zip": "85043"
+    },
+    {
+        "zip": "85046"
+    },
+    {
+        "zip": "85048"
+    },
+    {
+        "zip": "85053"
+    },
+    {
+        "zip": "85059"
+    },
+    {
+        "zip": "86012"
+    },
+    {
+        "zip": "86013"
+    },
+    {
+        "zip": "86014"
+    },
+    {
+        "zip": "86016"
+    },
+    {
+        "zip": "86017"
+    },
+    {
+        "zip": "86020"
+    },
+    {
+        "zip": "86021"
+    },
+    {
+        "zip": "86022"
+    },
+    {
+        "zip": "86026"
+    },
+    {
+        "zip": "86027"
+    },
+    {
+        "zip": "86029"
+    },
+    {
+        "zip": "86030"
+    },
+    {
+        "zip": "86031"
+    },
+    {
+        "zip": "86040"
+    },
+    {
+        "zip": "86043"
+    },
+    {
+        "zip": "86048"
+    },
+    {
+        "zip": "86080"
+    },
+    {
+        "zip": "86081"
+    },
+    {
+        "zip": "86082"
+    },
+    {
+        "zip": "86085"
+    },
+    {
+        "zip": "86086"
+    },
+    {
+        "zip": "86088"
+    },
+    {
+        "zip": "86089"
+    },
+    {
+        "zip": "86091"
+    },
+    {
+        "zip": "86094"
+    },
+    {
+        "zip": "87014"
+    },
+    {
+        "zip": "87015"
+    },
+    {
+        "zip": "87020"
+    },
+    {
+        "zip": "87026"
+    },
+    {
+        "zip": "87035"
+    },
+    {
+        "zip": "87050"
+    },
+    {
+        "zip": "87051"
+    },
+    {
+        "zip": "87052"
+    },
+    {
+        "zip": "87053"
+    },
+    {
+        "zip": "87061"
+    },
+    {
+        "zip": "87066"
+    },
+    {
+        "zip": "87070"
+    },
+    {
+        "zip": "87073"
+    },
+    {
+        "zip": "88055"
+    },
+    {
+        "zip": "88815"
+    },
+    {
+        "zip": "88818"
+    },
+    {
+        "zip": "88822"
+    },
+    {
+        "zip": "88823"
+    },
+    {
+        "zip": "88825"
+    },
+    {
+        "zip": "88833"
+    },
+    {
+        "zip": "88834"
+    },
+    {
+        "zip": "89012"
+    },
+    {
+        "zip": "89054"
+    },
+    {
+        "zip": "89813"
+    },
+    {
+        "zip": "90016"
+    },
+    {
+        "zip": "90027"
+    },
+    {
+        "zip": "90028"
+    },
+    {
+        "zip": "90051"
+    },
+    {
+        "zip": "91010"
+    },
+    {
+        "zip": "91017"
+    },
+    {
+        "zip": "91020"
+    },
+    {
+        "zip": "91023"
+    },
+    {
+        "zip": "92011"
+    },
+    {
+        "zip": "92012"
+    },
+    {
+        "zip": "92018"
+    },
+    {
+        "zip": "92020"
+    },
+    {
+        "zip": "92022"
+    },
+    {
+        "zip": "92028"
+    },
+    {
+        "zip": "92031"
+    },
+    {
+        "zip": "93010"
+    },
+    {
+        "zip": "93011"
+    },
+    {
+        "zip": "93013"
+    },
+    {
+        "zip": "93017"
+    },
+    {
+        "zip": "93018"
+    },
+    {
+        "zip": "94010"
+    },
+    {
+        "zip": "95012"
+    },
+    {
+        "zip": "95044"
+    },
+    {
+        "zip": "97010"
+    },
+    {
+        "zip": "98022"
+    },
+    {
+        "zip": "98032"
+    },
+    {
+        "zip": "98033"
+    },
+    {
+        "zip": "98034"
+    },
+    {
+        "zip": "98050"
+    },
+    {
+        "zip": "98055"
+    },
+    {
+        "zip": "98058"
+    },
+    {
+        "zip": "98065"
+    },
+    {
+        "zip": "98072"
+    },
+    {
+        "zip": "98073"
+    },
+    {
+        "zip": "98079"
+    }
+  ];
+
+(function () {
+    let selectArr = [];
+    let dataList = [];
+    let areaCode = '49' //德国
+    let params = {
+        countryCode: 'DE',
+        zip: ''
+    };
+
+    if (marketId == 30) { //法国
+        params.countryCode = 'FR';
+        areaCode = '33';
+    } else if (currencyId == 5) { //英国
+        params.countryCode = 'GB';
+        areaCode = '44';
+    } else if (marketId == 46) { //意大利
+        params.countryCode = 'IT';
+        areaCode = '39';
+    };
+    window.country_code = params.countryCode;
+
+    //输入邮编请求城市
+    $('body').on('keyup input', '[name="zip_code"]', debounce(function () {
+        $('#submitForm').attr('disabled', false).removeClass('stop-order');
+        params.zip = $(this).val().trim();
+        if (params.zip) {
+            //法国
+            if (marketId == 30) {
+                if (params.zip.length >= 3) {
+                    getESdata(params).then(res => {
+                        let list = '';
+                        if (res.length == 0) {
+                            $('.option-list').removeClass('show');
+                            $('[name="city"], [name="state"]').val('').attr({ 'readonly': false, 'maxlength': 200 });
+                            return;
+                        }
+                        dataList = JSON.parse(JSON.stringify(res));
+                        dataList.forEach(item => {
+                            list += `<li data-id="${item.id}">${item.zip_code}, ${item.city}, ${item.state}</li>`;
+                        });
+                        $('.option-list').addClass('show').find('.select-option').html(list);
+                    });
+                } else {
+
+                }
+            } else {
+                //德国、英国、意大利
+                if ((marketId == 44 && params.zip.length == 5) || (currencyId == 5 && params.zip.length >= 7) || (marketId == 46 && params.zip.length == 5)) {
+                    //德国、意大利不可派送邮编校验
+                    if (marketId === '44' || marketId === '46') {
+                        let notDeliveryArr = [];
+                        if (marketId === '44') {
+                            notDeliveryArr = ['78266', '27498'];
+                        } else {
+                            notDeliveryArr = notDeliveryZipList.map(v => v.zip);
+                        }
+                        if (typeof checkNotDeliveryZip !== 'undefined') {
+                            checkNotDeliveryZip(params.zip, notDeliveryArr);
+                        }
+                    }
+                    
+                    getESdata(params).then(res => {
+                        let list = '';
+                        if (res.city) {
+                            selectArr = res.city.toString().split(',');
+                            if (marketId == 46) {
+                                $('[name="state"]').trigger('focus').val(res.state[0]).trigger('blur').trigger('change');
+                            } 
+
+                            $('[name="state"], [name="city"]').attr({ 'readonly': true, 'maxlength': 0 });
+                            $('[name="city"]').parent('.form-group').addClass('auto-value form-group-label').trigger('blur').trigger('change');
+                            if (selectArr.length == 1) {
+                                $('.select-city').removeClass('show').html('');
+                                $('[name="city"]').val(selectArr[0]).trigger('blur').trigger('change');
+                            } else {
+                                selectArr.forEach(item => {
+                                    list += `<li data-value="${item}">${item}</li>`
+                                });
+                                $('[name="city"]').val('');
+                                $('.select-city').addClass('show').html(list);
+                            }
+                           
+                        } else {
+                            $('[name="city"]').parent('.form-group').removeClass('auto-value');
+                            $('[name="city"]').val('').attr({ 'readonly': false, 'maxlength': 20 });
+                            $('[name="city"], [name="state"]').val('');
+                            $('.select-city').removeClass('show').html('');
+                        }
+                    })
+                } else {
+                    $('[name="city"], [name="state"]').val('');
+                    $('.select-city').removeClass('show').html('')
+                };
+            }
+        }
+
+    }, 500));
+
+    
+
+    $('#data-list').on('click', '.select-option li', function () {
+        let rowId = $(this).attr('data-id');
+        let dataRow = dataList.filter(v => v.id == rowId);
+        $('[name="zip_code"]').val(dataRow[0].zip_code).trigger('focus').trigger('change');
+        $('[name="city"]').val(dataRow[0].city).trigger('focus').trigger('change');
+        $('[name="state"]').val(dataRow[0].state).trigger('focus').trigger('blur').trigger('change');
+        if (marketId == 30) {
+            $('[name="city"], [name="state"]').attr({ 'readonly': true, 'maxlength': 0 });
+        }
+
+        $(this).parents('.option-list').removeClass('show');
+    });
+
+
+    //当城市为多个时 再点击city输入框 显示下拉列表
+    $('body').on('click', '.auto-value [name="city"]', function () {
+        if (selectArr.length > 1) {
+            $('.select-city').addClass('show');
+        } else {
+            $('.select-city').removeClass('show');
+        }
+    })
+
+    $('body').on('click', '.select-city li', function () {
+        let eleVal = $(this).data('value');
+        $('[name="city"]').focus().val(eleVal).trigger('blur').trigger('change');
+        $(this).parent().removeClass('show');
+    })
+
+    $('body').on('input keyup', '[name="phone2"]', function (e) {
+        if (e.keyCode == 32) return;
+        let phone = String($(this).val());
+        if (!phone) {
+            $('input[name="phone"]').val('');
+            return;
+        }
+        phone = phone.trim().replace(/\+|\s/, '');
+        var fullPhone = phone.substring(0, areaCode.length) != areaCode ? areaCode + phone : phone;
+        $('input[name="phone"]').val(fullPhone).trigger('blur').trigger('change');
+        $('[name="phone2"]').val(phone);
+    });
+
+    $('body').on('input keyup', 'input[name="street"], input[name="address1"]', function () {
+        var street = $('[name="street"]').val();
+        var address = $('[name="address1"]').val();
+        $('input[name="address"]').val(street.trim() === address.trim() ? street : street + ' ' + address);
+
+        if (street.toLowerCase().includes('packstation') || street.toLowerCase().includes('poatfiliale')) {
+            if ($('.black-address').length == 0) {
+                $('[name="street"]').after('<small class="red black-address">Packstation&Poatfiliale keine Lieferung</small>');
+            }
+        } else {
+            $('.black-address').remove();
+        }
+    });
+
+    // 無街道號
+    $('#no-number').remove();
+})();
+

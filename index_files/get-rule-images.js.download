@@ -1,0 +1,20 @@
+//获取商品促销广告图，显示在商品详情最上方
+(function() {
+  var sinfo = store.get('sinfo');
+  if (typeof sinfo != 'undefined') {
+    sinfo = JSON.parse(sinfo);
+  };
+  if (sinfo && sinfo.ruleImages && sinfo.ruleImages.length > 0) {
+    var list = '';
+    var ruleImages = sinfo.ruleImages;
+    ruleImages.forEach(item => {
+      list += `<p><img src="${item.image}"></p>`;
+    });
+    let imgHtml = `<div class="rule-image text-center">${list}</div`;
+    if($('#goods-intro, #hd1, #home, #info-details').find('.detail-top-img').length){
+      $('#goods-intro, #hd1, #home, #info-details').find('.detail-top-img').after(imgHtml)
+    }else{
+      $('#goods-intro, #hd1, #home, #info-details').prepend(imgHtml);
+    }
+  }
+})();

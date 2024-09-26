@@ -1,0 +1,196 @@
+var subscribeMixin = {
+  data: {
+    aedKey: "KUf4hM5rThssysJhcRFCfxLR8Imihjl0eMsyhh1M7Wk", //AED256加密密钥
+    isSupport: null,
+    gkPush: null,
+    type: null, // 触发订阅弹框机制【1：成功页用户主动点击订阅按钮，2：订阅页面用户点击订阅按钮， 3：修改地址弹出的订阅弹框， 4：修改sku弹出的订阅弹框】
+    alreadySubscribed: false, // 用户是否已订阅通知
+    medifyIds: [3, 4, 5, 6] // 3：修改地址弹出的订阅弹框， 4：修改sku弹出的订阅弹框, 5:重复订单修改地址弹出的订阅弹框, 6:重复订单修改sku弹出的订阅弹框
+  },
+  mounted() {
+    this.gkPush = new GkPush();
+    // 判断浏览器是否支持webpush
+    this.isSupport = this.gkPush.isSupported(); // Boolean  浏览器是否支持web push
+  },
+  methods: {
+    // 订阅提示
+    subscribe(type) {
+      // type： 1=》点击订阅按钮  2=》修改后提示订阅
+      this.type = type;
+      if ([1, 2].includes(this.type)) {
+        this.isSupport ? this.pushSubscribe() : this.copysubscribeMsg();
+      } else if (this.medifyIds.includes(this.type)) {
+        this.isSupport ? this.subscribeMsg() : this.copySubscribe();
+      }
+
+    },
+
+    // 点击订阅按钮
+    subscribeLogistics() {
+      initConfirm(
+        `<p class="title">${this.subscribeLang.subscribeTitle}</p><p>${this.subscribeLang.subscribeHintSub}</p>`,
+        this.subscribeLang.subscribeBtn,
+        '',
+        () => {
+          this.pushSubscribe()
+        },
+        () => { },
+        'subscribe-mask',
+        this.subscribeLang.cancel
+      );
+    },
+
+    // 修改后提示订阅
+    subscribeMsg() {
+      initConfirm(
+        `<p>${this.subscribeLang.subscribeSub}</p>`,
+        this.subscribeLang.subscribeBtn,
+        '',
+        () => { this.pushSubscribe() },
+        () => { },
+        'subscribe-mask',
+        this.subscribeLang.cancel
+      );
+    },
+    // 点击订阅按钮后复制链接
+    copysubscribeMsg() {
+      initConfirm(
+        `<p>${this.subscribeLang.subscribeHintSub}</p><p class="hint-bold">${this.subscribeLang.subscribeCopyHint}</p>`,
+        this.subscribeLang.copyLink,
+        '',
+        () => {
+          this.customReplication();
+        },
+        () => { },
+        'subscribe-mask'
+      );
+    },
+    // 修改后提示订阅后复制链接
+    copySubscribe() {
+      initConfirm(
+        `<p>${this.subscribeLang.subscribeSub}</p><p class="hint-bold">${this.subscribeLang.subscribeCopyHint}</p>`,
+        this.subscribeLang.copyLink,
+        '',
+        () => {
+          this.customReplication()
+        },
+        () => { },
+        'subscribe-mask'
+      );
+    },
+    pushSubscribe() {
+      var that = this;
+      var from = null;
+      switch (this.type) {
+        case 1:
+          from = "successClick";
+          break;
+        case 2:
+          from = "subscribeClick";
+          break;
+        case 3:
+          from = "editAddress";
+          break;
+        case 4:
+          from = "editProductSku";
+          break;
+        default:
+          from = "other"
+      }
+      var options = {
+        collId,
+        currencyId,
+        areaId: orgCode,
+        langId: languageId,
+        from,
+        orderNumber: this.orderNum
+      }
+      // 订阅通知，options为订阅时携带的信息，如订阅消息类型等，数据格式为可以JSON序列化的对象
+      this.gkPush.subscribe(options).then(function (res) {
+        // 用户订阅成功，res为后端返回数据
+        toast(that.subscribeLang.subscriptionSuccessful);
+        that.alreadySubscribed = true;
+        $('.subscribe-btn').hide();
+        $('.already-subscribe').show();
+      }).catch(function (err) {
+        console.log(err);
+        toast(that.subscribeLang.subscriptionFailed)
+        // 用户订阅失败
+        if (err.message === 'User denied notification permission') {
+          // 用户不允许网站发送浏览器消息
+        } else if (err.message === 'Service Worker Registration is not available') {
+          // 浏览器不支持webpush
+        } else if (err.code) {
+          // 接口报错等
+        } else {
+          // 浏览器系统报错
+        }
+      });
+
+    },
+    customReplication() {
+      var href = location.search;
+      if (href) {
+        href = href.slice(-1) === "&" ? href : href + "&";
+      } else {
+        href = "?";
+      }
+      var data = this.aesEcbEncrypt(JSON.stringify(this.subscribesData), this.aedKey);
+      var copyHref = location.origin + '/index/subscription.html' + href + "subscribeData=" + encodeURIComponent(data) + "&orderNumber=" + this.orderNum + "&payType=" + this.subscribesData.payType;
+      const input = document.createElement('input');
+      input.value = copyHref;
+      document.body.appendChild(input);
+      input.select();
+      document.execCommand('copy');
+      document.body.removeChild(input);
+      toast(this.subscribeLang.copyAndPaste)
+    },
+    /**
+  * AES-256-ECB对称加密
+  * @param text {string} 要加密的明文
+  * @param secretKey {string} 密钥，43位随机大小写与数字
+  * @returns {string} 加密后的密文，Base64格式
+  */
+    aesEcbEncrypt(text, secretKey) {
+      var keyHex = CryptoJS.enc.Base64.parse(secretKey);
+      var messageHex = CryptoJS.enc.Utf8.parse(text);
+      var encrypted = CryptoJS.AES.encrypt(messageHex, keyHex, {
+        "mode": CryptoJS.mode.ECB,
+        "padding": CryptoJS.pad.Pkcs7
+      });
+      return encrypted.toString();
+    },
+
+    /**
+     * AES-256-ECB对称解密
+     * @param textBase64 {string} 要解密的密文，Base64格式
+     * @param secretKey {string} 密钥，43位随机大小写与数字
+     * @returns {string} 解密后的明文
+     */
+
+    aesEcbDecrypt(textBase64, secretKey) {
+      var keyHex = CryptoJS.enc.Base64.parse(secretKey);
+      var decrypt = CryptoJS.AES.decrypt(textBase64, keyHex, {
+        "mode": CryptoJS.mode.ECB,
+        "padding": CryptoJS.pad.Pkcs7
+      });
+      return CryptoJS.enc.Utf8.stringify(decrypt);
+    },
+
+    // 判断机型是否为苹果
+    isApplePhone() {
+      return /iPhone|iPad|iPod/.test(navigator.userAgent);
+    },
+  }
+}
+$(function () {
+  var curVue = null;
+  if(typeof successOrder !== 'undefined' ) {
+    curVue = successOrder;
+  } else if(typeof subscribeVue !== 'undefined' ) {
+    curVue = subscribeVue;
+  }
+  if (curVue && (curVue.isSupport || !curVue.isApplePhone())) {
+    $('.subscribe-btn').show();
+  }
+})

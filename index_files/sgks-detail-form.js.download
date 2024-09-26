@@ -1,0 +1,1 @@
+"use strict";$("body").append(' <form action="/checkout" method="post" id="detailForm">\n     <input type="hidden" name="single" value="true">\n     <input type="hidden" name="isCache" value="true">\n    </form>'),store.set("__gui_cod",codServiceCharge,864e6);
